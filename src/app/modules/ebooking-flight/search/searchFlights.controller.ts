@@ -96,12 +96,19 @@ console.log(resultsFrom,resultsTo)
   }
 
   
+  const normalizedTravellers = (traveller || [{ ptc: "ADT", count: 1 }]).map((t: any) => {
+    let ptcUpper = (t.ptc || "").toString().trim().toLowerCase();
+    if (ptcUpper === "adult") ptcUpper = "ADT";
+    else if (ptcUpper === "child") ptcUpper = "CHD";
+    else ptcUpper = ptcUpper.toUpperCase();
+    return { ...t, ptc: ptcUpper };
+  });
+
   const passengers = {
     leaderNationality: nationality || 158,
-    ptcList: traveller || [{ ptc: "ADT", count: 1 }],
+    ptcList: normalizedTravellers,
   };
 
-  
   const payload = {
     originDestinations,
     passengers,
