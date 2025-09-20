@@ -3,6 +3,7 @@ import { AuthRoutes } from "../modules/auth/auth.route";
 import { FlightsRoutes } from "../modules/ebooking-flight/search/searchFlights.route";
 import { checkAvailabilityRouter } from "../modules/ebooking-flight/availability/availability.route";
 import { FlightsBookRoutes } from "../modules/ebooking-flight/booking/bookFlight.route";
+import { airlineRoutes } from "../modules/ebooking-flight/airlines/airline.route";
 
 const router = express.Router();
 
@@ -14,6 +15,9 @@ const moduleRoutes = [
   {
     path: "/ebooking-flight",
     route: [FlightsRoutes, checkAvailabilityRouter, FlightsBookRoutes]
+  },{
+    path:"/airlines",
+    route:airlineRoutes
   }
 
 ];
