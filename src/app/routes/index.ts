@@ -4,6 +4,7 @@ import { FlightsRoutes } from "../modules/ebooking-flight/search/searchFlights.r
 import { checkAvailabilityRouter } from "../modules/ebooking-flight/availability/availability.route";
 import { FlightsBookRoutes } from "../modules/ebooking-flight/booking/bookFlight.route";
 import { airlineRoutes } from "../modules/ebooking-flight/airlines/airline.route";
+import { AirportRoutes } from "../modules/airport/airport.route";
 
 const router = express.Router();
 
@@ -14,12 +15,16 @@ const moduleRoutes = [
   },
   {
     path: "/ebooking-flight",
-    route: [FlightsRoutes, checkAvailabilityRouter, FlightsBookRoutes]
-  },{
-    path:"/airlines",
-    route:airlineRoutes
-  }
-
+    route: [FlightsRoutes, checkAvailabilityRouter, FlightsBookRoutes],
+  },
+  {
+    path: "/airlines",
+    route: airlineRoutes,
+  },
+  {
+    path: "/airports",
+    route: AirportRoutes,
+  },
 ];
 
 moduleRoutes.forEach((route) => router.use(route.path, route.route));
