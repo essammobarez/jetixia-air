@@ -21,4 +21,8 @@ export default {
     email: process.env.EMAIL,
     app_pass: process.env.APP_PASS,
   },
+  amadeus: {
+    client_id: process.env.AMADEUS_CLIENT_ID,
+    client_secret: process.env.AMADEUS_CLIENT_SECRET,
+  },
 };

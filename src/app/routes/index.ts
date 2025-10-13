@@ -5,6 +5,7 @@ import { checkAvailabilityRouter } from "../modules/ebooking-flight/availability
 import { FlightsBookRoutes } from "../modules/ebooking-flight/booking/bookFlight.route";
 import { airlineRoutes } from "../modules/ebooking-flight/airlines/airline.route";
 import { AirportRoutes } from "../modules/airport/airport.route";
+import { PriceListRoutes } from "../modules/price-list/priceList.route";
 
 const router = express.Router();
 
@@ -24,6 +25,10 @@ const moduleRoutes = [
   {
     path: "/airports",
     route: AirportRoutes,
+  },
+  {
+    path: "/price-list",
+    route: PriceListRoutes,
   },
 ];
 

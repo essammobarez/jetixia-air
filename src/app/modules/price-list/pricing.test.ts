@@ -1,0 +1,339 @@
+/**
+ * Test data for Flight Pricing Confirmation API
+ * Returns static mock data for testing and development
+ */
+
+export const mockPricingConfirmationData = {
+  data: {
+    type: "flight-offers-pricing",
+    flightOffers: [
+      {
+        type: "flight-offer",
+        id: "1",
+        source: "GDS",
+        instantTicketingRequired: false,
+        nonHomogeneous: false,
+        paymentCardRequired: false,
+        lastTicketingDate: "2025-10-28",
+        itineraries: [
+          {
+            segments: [
+              {
+                departure: {
+                  iataCode: "SYD",
+                  terminal: "1",
+                  at: "2025-11-02T12:30:00",
+                  airportName: "SYDNEY KINGSFORD SMITH",
+                  cityName: "SYDNEY",
+                  countryName: "AUSTRALIA",
+                },
+                arrival: {
+                  iataCode: "XMN",
+                  terminal: "3",
+                  at: "2025-11-02T18:55:00",
+                  airportName: "GAOQI INTL",
+                  cityName: "XIAMEN",
+                  countryName: "CHINA",
+                },
+                carrierCode: "MF",
+                carrierName: "XIAMEN AIRLINES",
+                number: "802",
+                aircraft: {
+                  code: "789",
+                },
+                operating: {
+                  carrierCode: "MF",
+                  carrierName: "XIAMEN AIRLINES",
+                },
+                duration: "PT9H25M",
+                id: "25",
+                numberOfStops: 0,
+                co2Emissions: [
+                  {
+                    weight: 402,
+                    weightUnit: "KG",
+                    cabin: "ECONOMY",
+                  },
+                ],
+              },
+              {
+                departure: {
+                  iataCode: "XMN",
+                  terminal: "3",
+                  at: "2025-11-02T22:15:00",
+                  airportName: "GAOQI INTL",
+                  cityName: "XIAMEN",
+                  countryName: "CHINA",
+                },
+                arrival: {
+                  iataCode: "BKK",
+                  at: "2025-11-03T00:45:00",
+                  airportName: "SUVARNABHUMI",
+                  cityName: "BANGKOK",
+                  countryName: "THAILAND",
+                },
+                carrierCode: "MF",
+                carrierName: "XIAMEN AIRLINES",
+                number: "843",
+                aircraft: {
+                  code: "738",
+                },
+                operating: {
+                  carrierCode: "MF",
+                  carrierName: "XIAMEN AIRLINES",
+                },
+                duration: "PT3H30M",
+                id: "26",
+                numberOfStops: 0,
+                co2Emissions: [
+                  {
+                    weight: 151,
+                    weightUnit: "KG",
+                    cabin: "ECONOMY",
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+        price: {
+          currency: "USD",
+          total: "248.50",
+          base: "78.00",
+          fees: [
+            {
+              amount: "0.00",
+              type: "SUPPLIER",
+            },
+            {
+              amount: "0.00",
+              type: "TICKETING",
+            },
+            {
+              amount: "0.00",
+              type: "FORM_OF_PAYMENT",
+            },
+          ],
+          grandTotal: "248.50",
+          billingCurrency: "USD",
+        },
+        pricingOptions: {
+          fareType: ["PUBLISHED"],
+          includedCheckedBagsOnly: true,
+        },
+        validatingAirlineCodes: ["MF"],
+        travelerPricings: [
+          {
+            travelerId: "1",
+            fareOption: "STANDARD",
+            travelerType: "ADULT",
+            price: {
+              currency: "USD",
+              total: "248.50",
+              base: "78.00",
+              taxes: [
+                {
+                  amount: "0.50",
+                  code: "G8",
+                },
+                {
+                  amount: "32.10",
+                  code: "WY",
+                },
+                {
+                  amount: "1.10",
+                  code: "E7",
+                },
+                {
+                  amount: "46.00",
+                  code: "AU",
+                },
+                {
+                  amount: "8.00",
+                  code: "YQ",
+                },
+                {
+                  amount: "70.20",
+                  code: "YR",
+                },
+                {
+                  amount: "12.60",
+                  code: "CN",
+                },
+              ],
+              refundableTaxes: "170.50",
+            },
+            fareDetailsBySegment: [
+              {
+                segmentId: "25",
+                cabin: "ECONOMY",
+                fareBasis: "SOW6AAUS",
+                brandedFare: "YSTANDARD",
+                class: "S",
+                includedCheckedBags: {
+                  quantity: 1,
+                },
+              },
+              {
+                segmentId: "26",
+                cabin: "ECONOMY",
+                fareBasis: "SOW6AAUS",
+                brandedFare: "YSTANDARD",
+                class: "S",
+                includedCheckedBags: {
+                  quantity: 1,
+                },
+              },
+            ],
+          },
+        ],
+      },
+    ],
+    bookingRequirements: {
+      emailAddressRequired: true,
+      mobilePhoneNumberRequired: true,
+      travelerRequirements: [
+        {
+          travelerId: "1",
+          documentRequired: true,
+        },
+      ],
+    },
+  },
+  included: {
+    "detailed-fare-rules": {
+      "1": {
+        fareBasis: "SOW6AAUS",
+        name: "ONE WAY SPECIAL EXCURSION",
+        fareNotes: {
+          descriptions: [
+            {
+              descriptionType: "GENERAL INFORMATION",
+              text: "RU.RULE APPLICATION XIAMEN AIRLINES PASSENGER AIR FARES APPLICATION TYPES OF TRANSPORTATION ------------------------------ FOR MORE INFORMATION PLEASE CONTACT MF SALES OFFICES OR VISIT WWW.XIAMENAIR.COM ------------------------------ CAPACITY LIMITATIONS THE CARRIER SHALL LIMIT THE NUMBER OF PASSENGERS CARRIED ON ANY ONE FLIGHT AT FARES GOVERNED BY THIS RULE AND SUCH FARES WILL NOT NECESSARILY BE AVAILABLE ON ALL FLIGHTS. THE NUMBER OF SEATS WHICH THE CARRIER SHALL MAKE AVAILABLE ON A GIVEN FLIGHT WILL BE DETERMINED BY THE CARRIERS BEST JUDGMENT OTHER CONDITIONS ------------------------------ ANY PROVISION CONTAINED OR REFERRED TO IN THIS TARIFF SHALL REMAIN VALID TO THE EXTENT NOT IN CONFLICT WITH APPLICABLE LAWS. THE INVALIDITY OF ANY PROVISION SHALL NOT AFFECT ANY OTHER PROVISION. ------------------------------- MN.MIN STAY NONE UNLESS OTHERWISE SPECIFIED MX.MAX STAY NONE UNLESS OTHERWISE SPECIFIED SR.SALES RESTRICT \nTICKETS MUST BE ISSUED ON MF  OR NS. OR - TICKETS MUST BE ISSUED ON MF  OR CZ. OR - TICKETS MUST BE ISSUED ON MF  OR RY. AP.ADVANCE RES/TKT \nRESERVATIONS ARE REQUIRED FOR ALL SECTORS. FL.FLT APPLICATION \nTHE FARE COMPONENT MUST BE ON ONE OR MORE OF THE FOLLOWING MF FLIGHTS 8000 THROUGH 8999 OPERATED BY MF MF FLIGHTS 381 THROUGH 382 OPERATED BY MF MF FLIGHTS 800 THROUGH 899 OPERATED BY MF. CD.CHILD DISCOUNTS \nACCOMPANIED CHILD 2-11 - CHARGE 75 PERCENT OF THE FARE. TICKET DESIGNATOR - CH AND PERCENT OF DISCOUNT. MUST BE ACCOMPANIED ON ALL FLIGHTS IN SAME COMPARTMENT BY ADULT 18 OR OLDER OR - INFANT UNDER 2 WITH A SEAT - CHARGE 75 PERCENT OF THE FARE. TICKET DESIGNATOR - IN AND PERCENT OF DISCOUNT. MUST BE ACCOMPANIED ON ALL FLIGHTS IN SAME COMPARTMENT BY ADULT 18 OR OLDER OR - INFANT UNDER 2 WITHOUT A SEAT - CHARGE 10 PERCENT OF THE FARE. TICKET DESIGNATOR - IN AND PERCENT OF DISCOUNT. MUST BE ACCOMPANIED ON ALL FLIGHTS IN SAME COMPARTMENT BY ADULT 18 OR OLDER. \nUNACCOMPANIED CHILD 5-11 - CHARGE 100 PERCENT OF THE FARE. TICKET DESIGNATOR - UM. NOTE - THE STANDARD SERVICE FEE SGD32 MUST BE COLLECTED FOR EACH DIRECTION FOR EACH UNACCOMPANIED CHILD FROM/TO SINGAPORE. SO.STOPOVERS FOR SOW6AAUS TYPE FARES \nNO STOPOVERS PERMITTED. TF.TRANSFERS/RTGS \nUNLIMITED TRANSFERS PERMITTED ON THE PRICING UNIT FARE BREAK SURFACE SECTORS NOT PERMITTED ON THE FARE COMPONENT EMBEDDED SURFACE SECTORS PERMITTED ON THE FARE COMPONENT PROVIDED - BETWEEN XMN AND FOC BETWEEN XMN AND JJN BETWEEN FOC AND JJN. SU.SURCHARGES \nTHE PROVISIONS BELOW APPLY ONLY AS FOLLOWS - TICKETS MAY ONLY BE SOLD IN RUSSIA. A SURCHARGE OF USD 7.00 PER COUPON WILL BE ADDED TO THE APPLICABLE FARE FOR TRAVEL. CO.COMBINABILITY APPLICABLE ADD-ON CONSTRUCTION IS ADDRESSED IN MISCELLANEOUS PROVISIONS - CATEGORY 23. END-ON-END END-ON-END COMBINATIONS PERMITTED. VALIDATE ALL FARE COMPONENTS. SIDE TRIPS NOT PERMITTED. PROVIDED - COMBINATIONS ARE NOT WITH ANY R-/Z-/G- TYPE FARES. EXCEPT AS PROVIDED ABOVE COMBINATIONS ARE IN ANY RULE IN ANY TARIFF. OPEN JAWS FARES MAY BE COMBINED ON A HALF ROUND TRIP BASIS WITH MF FARES -TO FORM SINGLE OR DOUBLE OPEN JAWS. THE MILEAGE FOR AN INTERNATIONAL OPEN SEGMENT IS EQUAL TO OR LESS THAN THE MILEAGE FOR THE SHORTEST FLOWN FARE COMPONENT. THERE IS NO MILEAGE RESTRICTION ON AN OPEN SEGMENT WITHIN ONE COUNTRY. PROVIDED - COMBINATIONS ARE NOT WITH ANY R-/Z-/G- TYPE FARES IN ANY RULE AND TARIFF. EXCEPT AS PROVIDED ABOVE COMBINATIONS ARE WITH ANY FARE IN ANY RULE IN ANY TARIFF. ROUND TRIPS FARES MAY BE COMBINED ON A HALF ROUND TRIP BASIS WITH MF FARES -TO FORM ROUND TRIPS. PROVIDED - COMBINATIONS ARE NOT WITH ANY R-/Z-/G- TYPE FARES IN ANY RULE AND TARIFF. EXCEPT AS PROVIDED ABOVE COMBINATIONS ARE WITH ANY FARE IN ANY RULE IN ANY TARIFF. CIRCLE TRIPS FARES MAY BE COMBINED ON A HALF ROUND TRIP BASIS WITH MF FARES -TO FORM CIRCLE TRIPS EXCEPT FOR AROUND-THE-WORLD FARES. PROVIDED - COMBINATIONS ARE NOT WITH ANY R-/Z-/G- TYPE FARES IN ANY RULE AND TARIFF. EXCEPT AS PROVIDED ABOVE COMBINATIONS ARE WITH ANY FARE IN ANY RULE IN ANY TARIFF. HI.HIGHER INTERMEDIATE POINT \nTHE HIGHER INTERMEDIATE POINT RULE DOES NOT APPLY FOR STOPOVERS. NOTE - HIP RULE DOES NOT APPLY IN CASE OF STOPOVERS. VC.VOLUNTARY CHANGES VOLUNTARY CHANGES CONDITIONS MAY APPLY FOR AUTOMATED REISSUE/REVALIDATION REFER TO PENALTIES CATEGORY *PE FOR DETAILS \nVR.VOLUNTARY REFUNDS VOLUNTARY CHANGES CONDITIONS MAY APPLY FOR AUTOMATED REFUNDS REFER TO PENALTIES CATEGORY *PE FOR DETAILS \n\n",
+            },
+            {
+              descriptionType: "TICKET ENDORSMENT",
+              text: "TE.TKT ENDORSEMENT \nTHE ORIGINAL AND THE REISSUED TICKET MUST BE ANNOTATED - Q/NONEND/PENALTY APPLIES - IN THE ENDORSEMENT BOX. ",
+            },
+            {
+              descriptionType: "PENALTIES",
+              text: "PE.PENALTIES FROM/TO S.W. PACIFIC   NOTE - GENERAL RULE DOES NOT APPLY \nCHANGES/CANCELLATIONS \nANY TIME CHARGE USD 300.00 FOR NO-SHOW. \nCHANGES \nANY TIME CHARGE USD 150.00. \nCANCELLATIONS \nBEFORE DEPARTURE CHARGE USD 200.00. \nAFTER DEPARTURE TICKET IS NON-REFUNDABLE. \n\nNOTE - BEFORE DEPARTURE-WHOLLY UNUSED TICKET AFTER DEPARTURE-PARTIALLY USED TICKET -------------------------------------------------- NOSHOW THE HIGHEST NOSHOW FEE OF ALL NOSHOWED FARES APPLIES. NO-SHOW PENALTY APPLY IN ADDITION TO REFUND/REISSUE CHARGE. -------------------------------------------------- CHANGES 1.APPLY THE HIGHEST CHANGE FEE OF ALL CHANGED FARE COMPONENTS WITHIN THE JOURNEY. 2.CHANGE TO LOWER FARE IS NOT PERMITTED. 3.CHANGES MUST BE WITHIN TICKET VALIDITY. 4.REPRICING METHOD 4.1 BEFORE DEPARTURE OF JOURNEY IF CHANGE DOES NOT OCCUR ON THE FIRST  FARE COMPONENT OF THE JOURNEY NEW FARE WILL BE RECALCULATED USING FARES IN EFFECT WHEN TICKET WAS ISSUED. WHEN CHANGE OCCUR ON THE FIRST FARE COMPONENT OF THE JOURNEY NEW FARE WILL BE RECALCULATED USING FARES IN EFFECT ON DATE OF REISSUE. 4.2 AFTER DEPARTURE OF JOURNEY NEW FARE WILL BE RECALCULATED USING FARES IN EFFECT WHEN TICKET WAS ISSUED. -------------------------------------------------- CANCELLATIONS 1.APPLY THE HIGHEST REFUND FEE PER PRICING UNIT AND THE CHARGE SHALL BE THE SUM OF ALL REFUND FEES OF PRICING UNITS OF THE ENTIRE TICKET COMPOSED OF MORE THAN ONE PRICING UNITS. 2.WHEN COMBINE NON-REFUNDABLE FARES WITH REFUNDABLE FARES THE MOST RESTRICTED RULE WILL BE APPLIED. 3.YQ/YR WILL NOT BE REFUNDED FOR NON- REFUNDABLE FARES/TICKET. -------------------------------------------------- CHD/INF PENALTY FOR CHANGABLE/REFUNDABLE FARE 1.INFANT WITHOUT A SEAT FREE OF CHARGE. 2.OTHER CHD/INF CHD/INF DISCOUNT/CAT19 APPLIES IF ANY. -------------------------------------------------- OTHER PROVISIONS 1.RESERVATIONS MUST BE CANCELLED BEFORE REFUND. 2.TICKET MUST BE USED IN SEQUENCE. THE FARES SURCHARGES YQ AND YR WILL BE NON-REFUNDABLE IF THE TICKET IS USED OUT OF SEQUENCE. 3.PENALTY APPLIES EXCEPT WHERE OTHERWISE PROVIDED IN APPLICABLE LAWS. --------------------END--------------------------- ",
+            },
+          ],
+        },
+        segmentId: "25",
+      },
+      "2": {
+        fareBasis: "SOW6AAUS",
+        name: "ONE WAY SPECIAL EXCURSION",
+        fareNotes: {
+          descriptions: [
+            {
+              descriptionType: "GENERAL INFORMATION",
+              text: "RU.RULE APPLICATION XIAMEN AIRLINES PASSENGER AIR FARES APPLICATION TYPES OF TRANSPORTATION ------------------------------ FOR MORE INFORMATION PLEASE CONTACT MF SALES OFFICES OR VISIT WWW.XIAMENAIR.COM ------------------------------ CAPACITY LIMITATIONS THE CARRIER SHALL LIMIT THE NUMBER OF PASSENGERS CARRIED ON ANY ONE FLIGHT AT FARES GOVERNED BY THIS RULE AND SUCH FARES WILL NOT NECESSARILY BE AVAILABLE ON ALL FLIGHTS. THE NUMBER OF SEATS WHICH THE CARRIER SHALL MAKE AVAILABLE ON A GIVEN FLIGHT WILL BE DETERMINED BY THE CARRIERS BEST JUDGMENT OTHER CONDITIONS ------------------------------ ANY PROVISION CONTAINED OR REFERRED TO IN THIS TARIFF SHALL REMAIN VALID TO THE EXTENT NOT IN CONFLICT WITH APPLICABLE LAWS. THE INVALIDITY OF ANY PROVISION SHALL NOT AFFECT ANY OTHER PROVISION. ------------------------------- MN.MIN STAY NONE UNLESS OTHERWISE SPECIFIED MX.MAX STAY NONE UNLESS OTHERWISE SPECIFIED SR.SALES RESTRICT \nTICKETS MUST BE ISSUED ON MF  OR NS. OR - TICKETS MUST BE ISSUED ON MF  OR CZ. OR - TICKETS MUST BE ISSUED ON MF  OR RY. AP.ADVANCE RES/TKT \nRESERVATIONS ARE REQUIRED FOR ALL SECTORS. FL.FLT APPLICATION \nTHE FARE COMPONENT MUST BE ON ONE OR MORE OF THE FOLLOWING MF FLIGHTS 8000 THROUGH 8999 OPERATED BY MF MF FLIGHTS 381 THROUGH 382 OPERATED BY MF MF FLIGHTS 800 THROUGH 899 OPERATED BY MF. CD.CHILD DISCOUNTS \nACCOMPANIED CHILD 2-11 - CHARGE 75 PERCENT OF THE FARE. TICKET DESIGNATOR - CH AND PERCENT OF DISCOUNT. MUST BE ACCOMPANIED ON ALL FLIGHTS IN SAME COMPARTMENT BY ADULT 18 OR OLDER OR - INFANT UNDER 2 WITH A SEAT - CHARGE 75 PERCENT OF THE FARE. TICKET DESIGNATOR - IN AND PERCENT OF DISCOUNT. MUST BE ACCOMPANIED ON ALL FLIGHTS IN SAME COMPARTMENT BY ADULT 18 OR OLDER OR - INFANT UNDER 2 WITHOUT A SEAT - CHARGE 10 PERCENT OF THE FARE. TICKET DESIGNATOR - IN AND PERCENT OF DISCOUNT. MUST BE ACCOMPANIED ON ALL FLIGHTS IN SAME COMPARTMENT BY ADULT 18 OR OLDER. \nUNACCOMPANIED CHILD 5-11 - CHARGE 100 PERCENT OF THE FARE. TICKET DESIGNATOR - UM. NOTE - THE STANDARD SERVICE FEE SGD32 MUST BE COLLECTED FOR EACH DIRECTION FOR EACH UNACCOMPANIED CHILD FROM/TO SINGAPORE. SO.STOPOVERS FOR SOW6AAUS TYPE FARES \nNO STOPOVERS PERMITTED. TF.TRANSFERS/RTGS \nUNLIMITED TRANSFERS PERMITTED ON THE PRICING UNIT FARE BREAK SURFACE SECTORS NOT PERMITTED ON THE FARE COMPONENT EMBEDDED SURFACE SECTORS PERMITTED ON THE FARE COMPONENT PROVIDED - BETWEEN XMN AND FOC BETWEEN XMN AND JJN BETWEEN FOC AND JJN. SU.SURCHARGES \nTHE PROVISIONS BELOW APPLY ONLY AS FOLLOWS - TICKETS MAY ONLY BE SOLD IN RUSSIA. A SURCHARGE OF USD 7.00 PER COUPON WILL BE ADDED TO THE APPLICABLE FARE FOR TRAVEL. CO.COMBINABILITY APPLICABLE ADD-ON CONSTRUCTION IS ADDRESSED IN MISCELLANEOUS PROVISIONS - CATEGORY 23. END-ON-END END-ON-END COMBINATIONS PERMITTED. VALIDATE ALL FARE COMPONENTS. SIDE TRIPS NOT PERMITTED. PROVIDED - COMBINATIONS ARE NOT WITH ANY R-/Z-/G- TYPE FARES. EXCEPT AS PROVIDED ABOVE COMBINATIONS ARE IN ANY RULE IN ANY TARIFF. OPEN JAWS FARES MAY BE COMBINED ON A HALF ROUND TRIP BASIS WITH MF FARES -TO FORM SINGLE OR DOUBLE OPEN JAWS. THE MILEAGE FOR AN INTERNATIONAL OPEN SEGMENT IS EQUAL TO OR LESS THAN THE MILEAGE FOR THE SHORTEST FLOWN FARE COMPONENT. THERE IS NO MILEAGE RESTRICTION ON AN OPEN SEGMENT WITHIN ONE COUNTRY. PROVIDED - COMBINATIONS ARE NOT WITH ANY R-/Z-/G- TYPE FARES IN ANY RULE AND TARIFF. EXCEPT AS PROVIDED ABOVE COMBINATIONS ARE WITH ANY FARE IN ANY RULE IN ANY TARIFF. ROUND TRIPS FARES MAY BE COMBINED ON A HALF ROUND TRIP BASIS WITH MF FARES -TO FORM ROUND TRIPS. PROVIDED - COMBINATIONS ARE NOT WITH ANY R-/Z-/G- TYPE FARES IN ANY RULE AND TARIFF. EXCEPT AS PROVIDED ABOVE COMBINATIONS ARE WITH ANY FARE IN ANY RULE IN ANY TARIFF. CIRCLE TRIPS FARES MAY BE COMBINED ON A HALF ROUND TRIP BASIS WITH MF FARES -TO FORM CIRCLE TRIPS EXCEPT FOR AROUND-THE-WORLD FARES. PROVIDED - COMBINATIONS ARE NOT WITH ANY R-/Z-/G- TYPE FARES IN ANY RULE AND TARIFF. EXCEPT AS PROVIDED ABOVE COMBINATIONS ARE WITH ANY FARE IN ANY RULE IN ANY TARIFF. HI.HIGHER INTERMEDIATE POINT \nTHE HIGHER INTERMEDIATE POINT RULE DOES NOT APPLY FOR STOPOVERS. NOTE - HIP RULE DOES NOT APPLY IN CASE OF STOPOVERS. VC.VOLUNTARY CHANGES VOLUNTARY CHANGES CONDITIONS MAY APPLY FOR AUTOMATED REISSUE/REVALIDATION REFER TO PENALTIES CATEGORY *PE FOR DETAILS \nVR.VOLUNTARY REFUNDS VOLUNTARY CHANGES CONDITIONS MAY APPLY FOR AUTOMATED REFUNDS REFER TO PENALTIES CATEGORY *PE FOR DETAILS \n\n",
+            },
+            {
+              descriptionType: "TICKET ENDORSMENT",
+              text: "TE.TKT ENDORSEMENT \nTHE ORIGINAL AND THE REISSUED TICKET MUST BE ANNOTATED - Q/NONEND/PENALTY APPLIES - IN THE ENDORSEMENT BOX. ",
+            },
+            {
+              descriptionType: "PENALTIES",
+              text: "PE.PENALTIES FROM/TO S.W. PACIFIC   NOTE - GENERAL RULE DOES NOT APPLY \nCHANGES/CANCELLATIONS \nANY TIME CHARGE USD 300.00 FOR NO-SHOW. \nCHANGES \nANY TIME CHARGE USD 150.00. \nCANCELLATIONS \nBEFORE DEPARTURE CHARGE USD 200.00. \nAFTER DEPARTURE TICKET IS NON-REFUNDABLE. \n\nNOTE - BEFORE DEPARTURE-WHOLLY UNUSED TICKET AFTER DEPARTURE-PARTIALLY USED TICKET -------------------------------------------------- NOSHOW THE HIGHEST NOSHOW FEE OF ALL NOSHOWED FARES APPLIES. NO-SHOW PENALTY APPLY IN ADDITION TO REFUND/REISSUE CHARGE. -------------------------------------------------- CHANGES 1.APPLY THE HIGHEST CHANGE FEE OF ALL CHANGED FARE COMPONENTS WITHIN THE JOURNEY. 2.CHANGE TO LOWER FARE IS NOT PERMITTED. 3.CHANGES MUST BE WITHIN TICKET VALIDITY. 4.REPRICING METHOD 4.1 BEFORE DEPARTURE OF JOURNEY IF CHANGE DOES NOT OCCUR ON THE FIRST  FARE COMPONENT OF THE JOURNEY NEW FARE WILL BE RECALCULATED USING FARES IN EFFECT WHEN TICKET WAS ISSUED. WHEN CHANGE OCCUR ON THE FIRST FARE COMPONENT OF THE JOURNEY NEW FARE WILL BE RECALCULATED USING FARES IN EFFECT ON DATE OF REISSUE. 4.2 AFTER DEPARTURE OF JOURNEY NEW FARE WILL BE RECALCULATED USING FARES IN EFFECT WHEN TICKET WAS ISSUED. -------------------------------------------------- CANCELLATIONS 1.APPLY THE HIGHEST REFUND FEE PER PRICING UNIT AND THE CHARGE SHALL BE THE SUM OF ALL REFUND FEES OF PRICING UNITS OF THE ENTIRE TICKET COMPOSED OF MORE THAN ONE PRICING UNITS. 2.WHEN COMBINE NON-REFUNDABLE FARES WITH REFUNDABLE FARES THE MOST RESTRICTED RULE WILL BE APPLIED. 3.YQ/YR WILL NOT BE REFUNDED FOR NON- REFUNDABLE FARES/TICKET. -------------------------------------------------- CHD/INF PENALTY FOR CHANGABLE/REFUNDABLE FARE 1.INFANT WITHOUT A SEAT FREE OF CHARGE. 2.OTHER CHD/INF CHD/INF DISCOUNT/CAT19 APPLIES IF ANY. -------------------------------------------------- OTHER PROVISIONS 1.RESERVATIONS MUST BE CANCELLED BEFORE REFUND. 2.TICKET MUST BE USED IN SEQUENCE. THE FARES SURCHARGES YQ AND YR WILL BE NON-REFUNDABLE IF THE TICKET IS USED OUT OF SEQUENCE. 3.PENALTY APPLIES EXCEPT WHERE OTHERWISE PROVIDED IN APPLICABLE LAWS. --------------------END--------------------------- ",
+            },
+          ],
+        },
+        segmentId: "26",
+      },
+    },
+    bags: {
+      "1": {
+        quantity: 1,
+        name: "CHECKED_BAG",
+        price: {
+          amount: "196.50",
+          currencyCode: "USD",
+        },
+        bookableByItinerary: true,
+        segmentIds: ["25", "26"],
+        travelerIds: ["1"],
+      },
+      "2": {
+        quantity: 2,
+        name: "CHECKED_BAG",
+        price: {
+          amount: "393.00",
+          currencyCode: "USD",
+        },
+        bookableByItinerary: true,
+        segmentIds: ["25", "26"],
+        travelerIds: ["1"],
+      },
+    },
+    "credit-card-fees": {
+      "1": {
+        brand: "VISA",
+        amount: "0",
+        currency: "EUR",
+        flightOfferId: "1",
+      },
+      "2": {
+        brand: "AMERICAN_EXPRESS",
+        amount: "0",
+        currency: "EUR",
+        flightOfferId: "1",
+      },
+      "3": {
+        brand: "MASTERCARD",
+        amount: "0",
+        currency: "EUR",
+        flightOfferId: "1",
+      },
+      "4": {
+        brand: "VISA_ELECTRON",
+        amount: "0",
+        currency: "EUR",
+        flightOfferId: "1",
+      },
+      "5": {
+        brand: "VISA_DEBIT",
+        amount: "0",
+        currency: "EUR",
+        flightOfferId: "1",
+      },
+      "6": {
+        brand: "MASTERCARD_DEBIT",
+        amount: "0",
+        currency: "EUR",
+        flightOfferId: "1",
+      },
+      "7": {
+        brand: "MAESTRO",
+        amount: "0",
+        currency: "EUR",
+        flightOfferId: "1",
+      },
+      "8": {
+        brand: "DINERS",
+        amount: "0",
+        currency: "EUR",
+        flightOfferId: "1",
+      },
+    },
+  },
+  dictionaries: {
+    locations: {
+      BKK: {
+        cityCode: "BKK",
+        countryCode: "TH",
+      },
+      XMN: {
+        cityCode: "XMN",
+        countryCode: "CN",
+      },
+      SYD: {
+        cityCode: "SYD",
+        countryCode: "AU",
+      },
+    },
+  },
+};
