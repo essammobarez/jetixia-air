@@ -32,8 +32,10 @@ export interface AirportSearchResult {
  */
 export class AirportSearchService {
   /**
-   * Searches airports by name and municipality.
-   * Uses partial matching (contains) for both name and municipality fields.
+   * Searches airports with IATA code priority.
+   * Priority 1: If IATA code matches, return only those results
+   * Priority 2: If no IATA code match, search by name and municipality
+   * Uses partial matching (case-insensitive) for all fields.
    * Returns paginated results.
    */
   async searchAirports(
@@ -44,15 +46,31 @@ export class AirportSearchService {
     const skip = (page - 1) * limit;
     const term = String(queryParams.searchTerm || "").trim();
 
-    // Create search conditions for name and municipality
-    const searchConditions: any = {};
+    let searchConditions: any = {};
 
     if (term) {
       const searchRegex = new RegExp(term, "i");
-      searchConditions.$or = [
-        { name: searchRegex },
-        { municipality: searchRegex },
-      ];
+
+      // First, check if there's an IATA code match
+      const iataCount = await Airport.countDocuments({
+        $and: [
+          { iata_code: searchRegex },
+          { iata_code: { $ne: "" } }, // Exclude empty IATA codes
+        ],
+      });
+
+      if (iataCount > 0) {
+        // Priority 1: If IATA code matches, search only by IATA code
+        searchConditions = {
+          $and: [{ iata_code: searchRegex }, { iata_code: { $ne: "" } }],
+        };
+      } else {
+        // Priority 2: If no IATA code match, search by name and municipality
+        searchConditions.$or = [
+          { name: searchRegex },
+          { municipality: searchRegex },
+        ];
+      }
     }
 
     // Get total count for pagination

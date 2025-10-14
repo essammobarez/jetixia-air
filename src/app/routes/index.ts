@@ -6,6 +6,8 @@ import { FlightsBookRoutes } from "../modules/ebooking-flight/booking/bookFlight
 import { airlineRoutes } from "../modules/ebooking-flight/airlines/airline.route";
 import { AirportRoutes } from "../modules/airport/airport.route";
 import { PriceListRoutes } from "../modules/price-list/priceList.route";
+import { BookingRoutes } from "../modules/booking/booking.route";
+import { SeatMapRoutes } from "../modules/seatmap/seatmap.route";
 
 const router = express.Router();
 
@@ -29,6 +31,14 @@ const moduleRoutes = [
   {
     path: "/price-list",
     route: PriceListRoutes,
+  },
+  {
+    path: "/seatmap",
+    route: SeatMapRoutes,
+  },
+  {
+    path: "/booking",
+    route: BookingRoutes,
   },
 ];
 
