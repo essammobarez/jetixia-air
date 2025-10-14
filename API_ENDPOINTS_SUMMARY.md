@@ -58,7 +58,7 @@ Get confirmed actual pricing with detailed information.
 
 ---
 
-### 3. Test Pricing Data ⭐ NEW
+### 3. Test Pricing Data
 
 **GET** `/api/v1/price-list/test`
 
@@ -85,6 +85,100 @@ curl http://localhost:5000/api/v1/price-list/test
 - UI/UX testing
 - Demo presentations
 - Integration testing
+
+---
+
+### 4. Get Seat Maps ⭐ NEW
+
+**POST** `/api/v1/seatmap`
+
+Get detailed seat maps with availability, positions, features, and pricing.
+
+**Request:**
+
+```json
+{
+  "flightOffers": [
+    {
+      /* Complete flight offer from /price-list/confirm */
+    }
+  ]
+}
+```
+
+**Response:** Seat maps for all segments with:
+
+- ✅ Seat availability (AVAILABLE/OCCUPIED/BLOCKED)
+- ✅ Seat positions (Window/Aisle/Middle)
+- ✅ Seat features (Exit row, Extra legroom)
+- ✅ Seat pricing (Free vs. Premium)
+- ✅ Aircraft layout and configuration
+- ✅ Per-traveler pricing
+
+**Use For:**
+
+- Displaying seat selection interface
+- Showing seat availability
+- Premium seat upselling
+- Enhanced booking experience
+
+---
+
+### 5. Create Flight Booking
+
+**POST** `/api/v1/booking/create`
+
+Create a flight booking with optional seat selection.
+
+**Request:**
+
+```json
+{
+  "flightOffer": {
+    /* from /price-list/confirm */
+  },
+  "travelers": [
+    {
+      "id": "1",
+      "firstName": "John",
+      "lastName": "Doe",
+      "dateOfBirth": "1990-01-15",
+      "gender": "MALE"
+    }
+  ],
+  "contactEmail": "customer@example.com",
+  "contactPhone": "1234567890",
+  "contactPhoneCountryCode": "1",
+  "address": {
+    "lines": ["123 Main St"],
+    "postalCode": "10001",
+    "cityName": "New York",
+    "countryCode": "US"
+  },
+  "seatSelections": [
+    {
+      "segmentId": "25",
+      "travelerIds": ["1"],
+      "number": "12A"
+    }
+  ],
+  "instantTicketing": true
+}
+```
+
+**Response:** Booking confirmation with:
+
+- ✅ Booking ID and PNR (6-character)
+- ✅ E-ticket number (if instant ticketing)
+- ✅ Booking status (TICKETED/RESERVED)
+- ✅ Ticketing deadline
+- ✅ Flight and traveler details
+
+**Options:**
+
+- **Instant Ticketing** (`instantTicketing: true`) - Immediate ticket issuance
+- **Delayed Ticketing** (`instantTicketing: false`) - 6-day ticketing window
+- **Seat Selection** (optional) - Pre-select seats from seatmap API
 
 ---
 
@@ -128,9 +222,26 @@ curl http://localhost:5000/api/v1/price-list/test
 └─────────────────────────────────────────────┘
                     ↓
 ┌─────────────────────────────────────────────┐
-│ Step 6: Proceed to Booking                  │
+│ Step 6: Get Seat Maps (Optional) ⭐ NEW     │
+│ POST /api/v1/seatmap                        │
 │                                              │
-│ Action: User confirms and books             │
+│ Input: Confirmed flight offer               │
+│ Output: Seat availability & pricing         │
+└─────────────────────────────────────────────┘
+                    ↓
+┌─────────────────────────────────────────────┐
+│ Step 7: User Selects Seats (Optional)       │
+│                                              │
+│ Show: Seat map with availability            │
+│ Action: User selects seats                  │
+└─────────────────────────────────────────────┘
+                    ↓
+┌─────────────────────────────────────────────┐
+│ Step 8: Create Booking                      │
+│ POST /api/v1/booking/create                 │
+│                                              │
+│ Input: Flight + Travelers + Seats           │
+│ Output: Booking confirmation (PNR)          │
 └─────────────────────────────────────────────┘
 ```
 
@@ -175,11 +286,13 @@ Use mock data for:
 
 ## 📊 Quick Reference
 
-| Endpoint              | Method | Purpose         | Requires Auth | Response Time |
-| --------------------- | ------ | --------------- | ------------- | ------------- |
-| `/price-list`         | POST   | Search flights  | Yes (Amadeus) | ~2-4 seconds  |
-| `/price-list/confirm` | POST   | Confirm pricing | Yes (Amadeus) | ~1-3 seconds  |
-| `/price-list/test`    | GET    | Get mock data   | No            | Instant       |
+| Endpoint              | Method | Purpose            | Requires Auth | Response Time |
+| --------------------- | ------ | ------------------ | ------------- | ------------- |
+| `/price-list`         | POST   | Search flights     | Yes (Amadeus) | ~2-4 seconds  |
+| `/price-list/confirm` | POST   | Confirm pricing    | Yes (Amadeus) | ~1-3 seconds  |
+| `/price-list/test`    | GET    | Get mock data      | No            | Instant       |
+| `/seatmap`            | POST   | Get seat maps      | Yes (Amadeus) | ~1-2 seconds  |
+| `/booking/create`     | POST   | Create booking/PNR | Yes (Amadeus) | ~2-5 seconds  |
 
 ---
 
@@ -295,32 +408,54 @@ Use mock data for:
 ## 🚀 Quick Start Commands
 
 ```bash
-# Search flights
+# 1. Search flights
 curl -X POST http://localhost:5000/api/v1/price-list \
   -H "Content-Type: application/json" \
   -d '{"originLocationCode":"SYD","destinationLocationCode":"BKK","departureDate":"2025-11-02","adults":1}'
 
-# Get test data (instant, no auth needed)
+# 2. Get test data (instant, no auth needed)
 curl http://localhost:5000/api/v1/price-list/test
 
-# Confirm pricing (requires flight offer from search)
+# 3. Confirm pricing (requires flight offer from search)
 curl -X POST http://localhost:5000/api/v1/price-list/confirm \
   -H "Content-Type: application/json" \
   -d '{"flightOffers":[{...}]}'
+
+# 4. Get seat maps (requires flight offer from confirm)
+curl -X POST http://localhost:5000/api/v1/seatmap \
+  -H "Content-Type: application/json" \
+  -d '{"flightOffers":[{...}]}'
+
+# 5. Create booking with seat selection
+curl -X POST http://localhost:5000/api/v1/booking/create \
+  -H "Content-Type: application/json" \
+  -d '{
+    "flightOffer": {...},
+    "travelers": [...],
+    "contactEmail": "customer@example.com",
+    "contactPhone": "1234567890",
+    "contactPhoneCountryCode": "1",
+    "address": {...},
+    "seatSelections": [{"segmentId":"25","travelerIds":["1"],"number":"12A"}],
+    "instantTicketing": true
+  }'
 ```
 
 ---
 
 ## 📚 Documentation Files
 
-| File                                   | Description                     |
-| -------------------------------------- | ------------------------------- |
-| `src/app/modules/price-list/README.md` | Complete API documentation      |
-| `AMADEUS_PRICE_LIST_SETUP.md`          | Setup and configuration guide   |
-| `PRICING_CONFIRMATION_API.md`          | Pricing confirmation details    |
-| `AIRPORT_ENRICHMENT_FEATURE.md`        | Airport enrichment feature docs |
-| `UI_DESIGN_GUIDE.md`                   | UI/UX design recommendations    |
-| `API_ENDPOINTS_SUMMARY.md`             | This file (quick reference)     |
+| File                                   | Description                            |
+| -------------------------------------- | -------------------------------------- |
+| `src/app/modules/price-list/README.md` | Complete flight search API docs        |
+| `src/app/modules/seatmap/README.md`    | Seat map API documentation ⭐ NEW      |
+| `src/app/modules/booking/README.md`    | Booking API with seat selection        |
+| `SEATMAP_API_GUIDE.md`                 | Complete seat map implementation guide |
+| `AMADEUS_PRICE_LIST_SETUP.md`          | Setup and configuration guide          |
+| `PRICING_CONFIRMATION_API.md`          | Pricing confirmation details           |
+| `AIRPORT_ENRICHMENT_FEATURE.md`        | Airport enrichment feature docs        |
+| `UI_DESIGN_GUIDE.md`                   | UI/UX design recommendations           |
+| `API_ENDPOINTS_SUMMARY.md`             | This file (quick reference)            |
 
 ---
 
