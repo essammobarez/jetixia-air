@@ -16,17 +16,22 @@ export const getSeatMaps = async (
   request: SeatMapRequest
 ): Promise<SeatMapResponse> => {
   try {
+    console.log("=== SEATMAP API REQUEST START ===");
+
     // Step 1: Get access token with authorization
     const token = await getAmadeusAccessToken();
+    console.log("✓ Access token obtained");
 
     // Step 2: Build request body
     const requestBody = {
       data: request.flightOffers,
     };
+    console.log("Request Body:", JSON.stringify(requestBody, null, 2));
 
     // Step 3: Call Amadeus SeatMap API
     const baseUrl = getAmadeusBaseUrl();
     const url = `${baseUrl}/v1/shopping/seatmaps`;
+    console.log("API URL:", url);
 
     const response = await axios.post(url, requestBody, {
       headers: {
@@ -35,10 +40,15 @@ export const getSeatMaps = async (
       },
     });
 
+    console.log("✓ Seatmap API Response Status:", response.status);
+    console.log("=== SEATMAP API REQUEST END ===\n");
+
     const seatMapResponse: SeatMapResponse = response.data;
 
     return seatMapResponse;
   } catch (error: unknown) {
+    console.error("=== SEATMAP API ERROR ===");
+
     const err = error as {
       response?: {
         status: number;
@@ -49,7 +59,17 @@ export const getSeatMaps = async (
       message?: string;
     };
 
-    // Error fetching seat maps
+    // Log raw error details from supplier API
+    if (err?.response) {
+      console.error("❌ Supplier API Error Status:", err.response.status);
+      console.error(
+        "❌ Supplier API Raw Error:",
+        JSON.stringify(err.response.data, null, 2)
+      );
+    } else {
+      console.error("❌ Request Error:", err?.message || error);
+    }
+    console.error("=== SEATMAP API ERROR END ===\n");
 
     if (err?.response?.status === 400) {
       const errorDetail =

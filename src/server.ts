@@ -1,7 +1,7 @@
-import { Server } from 'http';
-import mongoose from 'mongoose';
-import app from './app';
-import config from './app/config';
+import { Server } from "http";
+import mongoose from "mongoose";
+import app from "./app";
+import config from "./app/config";
 
 let server: Server;
 
@@ -19,7 +19,7 @@ async function main() {
 
 main();
 
-process.on('unhandledRejection', (err) => {
+process.on("unhandledRejection", (err) => {
   console.log(`😈 unahandledRejection is detected , shutting down ...`, err);
   if (server) {
     server.close(() => {
@@ -29,7 +29,8 @@ process.on('unhandledRejection', (err) => {
   process.exit(1);
 });
 
-process.on('uncaughtException', () => {
+process.on("uncaughtException", (err) => {
   console.log(`😈 uncaughtException is detected , shutting down ...`);
+  console.error("Error details:", err);
   process.exit(1);
 });
