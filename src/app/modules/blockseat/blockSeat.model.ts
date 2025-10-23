@@ -1,4 +1,4 @@
-import mongoose, { model, Schema } from "mongoose";
+import { model, Schema } from "mongoose";
 
 // ==================== ROUTE SCHEMA ====================
 const RouteSchema = new Schema(
@@ -24,7 +24,7 @@ const RouteSchema = new Schema(
 const ClassInventorySchema = new Schema(
   {
     classId: { type: Number, required: true },
-    className: { type: String, required: true },
+    className: { type: String },
     totalSeats: { type: Number, required: true },
     bookedSeats: { type: Number, default: 0 },
     availableSeats: { type: Number, required: true },
@@ -160,7 +160,7 @@ const BlockSeatSchema = new Schema(
   },
   {
     timestamps: true,
-    collection: "blockseats",
+    collection: "flightblockseats",
   }
 );
 
@@ -212,7 +212,8 @@ BlockSeatSchema.pre("save", function (next) {
 // Get total seats across all classes
 BlockSeatSchema.methods.getTotalSeats = function () {
   return this.classes.reduce(
-    (total: number, classItem: any) => total + classItem.totalSeats,
+    (total: number, classItem: { totalSeats: number }) =>
+      total + classItem.totalSeats,
     0
   );
 };
@@ -220,7 +221,8 @@ BlockSeatSchema.methods.getTotalSeats = function () {
 // Get total booked seats across all classes
 BlockSeatSchema.methods.getTotalBookedSeats = function () {
   return this.classes.reduce(
-    (total: number, classItem: any) => total + classItem.bookedSeats,
+    (total: number, classItem: { bookedSeats: number }) =>
+      total + classItem.bookedSeats,
     0
   );
 };
@@ -228,16 +230,20 @@ BlockSeatSchema.methods.getTotalBookedSeats = function () {
 // Get total available seats across all classes
 BlockSeatSchema.methods.getTotalAvailableSeats = function () {
   return this.classes.reduce(
-    (total: number, classItem: any) => total + classItem.availableSeats,
+    (total: number, classItem: { availableSeats: number }) =>
+      total + classItem.availableSeats,
     0
   );
 };
 
 // Get total revenue across all classes
 BlockSeatSchema.methods.getTotalRevenue = function () {
-  return this.classes.reduce((total: number, classItem: any) => {
-    return total + classItem.bookedSeats * classItem.price;
-  }, 0);
+  return this.classes.reduce(
+    (total: number, classItem: { bookedSeats: number; price: number }) => {
+      return total + classItem.bookedSeats * classItem.price;
+    },
+    0
+  );
 };
 
 // Check if block has available seats for a specific class and date
@@ -247,20 +253,24 @@ BlockSeatSchema.methods.hasAvailableSeats = function (
   returnDate?: string,
   requiredSeats: number = 1
 ) {
-  const classItem = this.classes.find((c: any) => c.classId === classId);
+  const classItem = this.classes.find(
+    (c: { classId: number }) => c.classId === classId
+  );
   if (!classItem) return false;
 
   // Check if the date combination exists
-  const isDateAvailable = this.availableDates.some((dateObj: any) => {
-    if (this.route.tripType === "ONE_WAY") {
-      return dateObj.departureDate === departureDate;
-    } else {
-      return (
-        dateObj.departureDate === departureDate &&
-        dateObj.returnDate === returnDate
-      );
+  const isDateAvailable = this.availableDates.some(
+    (dateObj: { departureDate: string; returnDate?: string }) => {
+      if (this.route.tripType === "ONE_WAY") {
+        return dateObj.departureDate === departureDate;
+      } else {
+        return (
+          dateObj.departureDate === departureDate &&
+          dateObj.returnDate === returnDate
+        );
+      }
     }
-  });
+  );
 
   const hasEnoughSeats = classItem.availableSeats >= requiredSeats;
 
@@ -285,4 +295,4 @@ BlockSeatSchema.statics.findByWholesaler = function (
 };
 
 // ==================== EXPORT ====================
-export const BlockSeat = model<any>("BlockSeat", BlockSeatSchema);
+export const BlockSeat = model("Flight_BlockSeat", BlockSeatSchema);

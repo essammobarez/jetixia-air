@@ -16,7 +16,7 @@ const router = Router();
  *   airline: { code: string, name: string, country?: string },
  *   route: { from: { country: string, iataCode: string }, to: { country: string, iataCode: string }, tripType: "ONE_WAY" | "ROUND_TRIP" },
  *   availableDates: Array<{ departureDate: string, returnDate?: string }>, // For ONE_WAY: only departureDate, For ROUND_TRIP: both departureDate and returnDate
- *   classes: Array<{ classId: number, className: string, totalSeats: number, price: number }>,
+ *   classes: Array<{ classId: number, className?: string, totalSeats: number, price: number }>,
  *   currency?: string, // default "USD"
  *   status?: "Available" | "Unavailable", // default "Available"
  *   fareRules?: { template?: string, refundable?: boolean, changeFee?: number, cancellationFee?: number },

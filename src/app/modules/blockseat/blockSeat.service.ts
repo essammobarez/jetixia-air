@@ -29,7 +29,7 @@ export interface CreateBlockSeatRequest {
   availableDates: AvailableDate[];
   classes: Array<{
     classId: number;
-    className: string;
+    className?: string;
     totalSeats: number;
     price: number;
   }>;

@@ -117,15 +117,13 @@ const createBlockSeatController = catchAsync(
     for (const classItem of classes) {
       if (
         !classItem.classId ||
-        !classItem.className ||
         !classItem.totalSeats ||
         classItem.price === undefined
       ) {
         return sendResponse(res, {
           statusCode: httpStatus.BAD_REQUEST,
           success: false,
-          message:
-            "Each class must have classId, className, totalSeats, and price",
+          message: "Each class must have classId, totalSeats, and price",
           data: null,
         });
       }
