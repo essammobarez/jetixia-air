@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 import path from "path";
 
-dotenv.config({ path: path.join((process.cwd(), ".env")) });
+dotenv.config({ path: path.join(process.cwd(), ".env") });
 
 export default {
   NODE_ENV: process.env.NODE_ENV,
@@ -24,5 +24,15 @@ export default {
   amadeus: {
     client_id: process.env.AMADEUS_CLIENT_ID,
     client_secret: process.env.AMADEUS_CLIENT_SECRET,
+  },
+  sabre: {
+    clientId: process.env.SABRE_CLIENT_ID,
+    clientSecret: process.env.SABRE_CLIENT_SECRET,
+    username: process.env.SABRE_USERNAME,
+    password: process.env.SABRE_PASSWORD,
+    organization: process.env.SABRE_ORGANIZATION,
+    domain: process.env.SABRE_DOMAIN,
+    baseUrl:
+      process.env.SABRE_BASE_URL || "https://api-crt.cert.havail.sabre.com",
   },
 };

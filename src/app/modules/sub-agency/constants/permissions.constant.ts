@@ -1,0 +1,9 @@
+export const SUBAGENT_PERMISSIONS = [
+  // User group permissions
+  "SUPERVISOR",
+  "BOOKING",
+  "BOOKING_HISTORY",
+  "ACCOUNTS",
+  "BOOKING_AND_HISTORY",
+  "BOOKING_AND_ACCOUNTS",
+];
