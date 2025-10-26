@@ -40,6 +40,8 @@ const createBlockSeatController = catchAsync(
       baggageAllowance,
       commission,
       remarks,
+      autoRelease,
+      releaseDate,
     } = req.body;
 
     if (!name) {
@@ -82,7 +84,7 @@ const createBlockSeatController = catchAsync(
       });
     }
 
-    // Validate date structure
+    // Validate date structure - back to object array format
     for (const dateObj of availableDates) {
       if (!dateObj.departureDate) {
         return sendResponse(res, {
@@ -142,6 +144,8 @@ const createBlockSeatController = catchAsync(
       baggageAllowance,
       commission,
       remarks,
+      autoRelease,
+      releaseDate,
     };
 
     // Create block seat

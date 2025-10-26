@@ -29,10 +29,12 @@ export class SabreTestService {
 
       // v2 Double Base64 encoding method (WORKING METHOD)
       // Step 1: Base64 encode User ID
-      const encodedUserId = Buffer.from(clientId).toString("base64");
+      const encodedUserId = Buffer.from(clientId || "").toString("base64");
 
-      // Step 2: Base64 encode Password  
-      const encodedPassword = Buffer.from(clientSecret).toString("base64");
+      // Step 2: Base64 encode Password
+      const encodedPassword = Buffer.from(clientSecret || "").toString(
+        "base64"
+      );
 
       // Step 3: Concatenate with colon
       const concatenated = `${encodedUserId}:${encodedPassword}`;
@@ -76,7 +78,8 @@ export class SabreTestService {
         });
 
         throw new Error(
-          `Sabre Authentication Failed: ${error.response?.data?.error_description || error.message
+          `Sabre Authentication Failed: ${
+            error.response?.data?.error_description || error.message
           }`
         );
       }
