@@ -1,4 +1,4 @@
-import { model, Schema } from "mongoose";
+import { model, Schema, Document, Model } from "mongoose";
 
 // ==================== ROUTE SCHEMA ====================
 const RouteSchema = new Schema(
@@ -97,6 +97,89 @@ const AvailableDatesSchema = new Schema(
   },
   { _id: false }
 );
+
+// ==================== INTERFACES ====================
+export interface IBlockSeat extends Document {
+  name: string;
+  airline: {
+    code: string;
+    name: string;
+    country?: string;
+  };
+  route: {
+    from: {
+      country: string;
+      iataCode: string;
+    };
+    to: {
+      country: string;
+      iataCode: string;
+    };
+    tripType: "ONE_WAY" | "ROUND_TRIP";
+  };
+  availableDates: Array<{
+    departureDate: string;
+    returnDate?: string;
+  }>;
+  classes: Array<{
+    classId: number;
+    className?: string;
+    totalSeats: number;
+    bookedSeats: number;
+    availableSeats: number;
+    price: number;
+    currency: string;
+  }>;
+  currency: string;
+  fareRules: {
+    template:
+      | "FLEXIBLE"
+      | "SEMI_FLEXIBLE"
+      | "STANDARD"
+      | "RESTRICTED"
+      | "NON_REFUNDABLE"
+      | "MANUAL_ENTRY";
+    refundable: boolean;
+    changeFee: number;
+    cancellationFee: number;
+  };
+  baggageAllowance: {
+    checkedBags: number;
+    weightPerBag: string;
+    carryOnWeight: string;
+  };
+  commission: {
+    supplierCommission?: {
+      type: "FIXED_AMOUNT" | "PERCENTAGE";
+      value: number;
+    };
+    agencyCommission?: {
+      type: "FIXED_AMOUNT" | "PERCENTAGE";
+      value: number;
+    };
+  };
+  status: "Available" | "Unavailable";
+  wholesaler: string;
+  remarks?: string;
+  autoRelease: boolean;
+  releaseDate?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+  hasAvailableSeats(
+    classId: number,
+    departureDate: string,
+    returnDate?: string,
+    requiredSeats?: number
+  ): boolean;
+}
+
+export interface IBlockSeatModel extends Model<IBlockSeat> {
+  findByWholesaler(
+    wholesalerId: string,
+    page?: number,
+    limit?: number
+  ): Promise<IBlockSeat[]>;
+}
 
 // ==================== MAIN BLOCK SEAT SCHEMA ====================
 const BlockSeatSchema = new Schema(
@@ -295,4 +378,7 @@ BlockSeatSchema.statics.findByWholesaler = function (
 };
 
 // ==================== EXPORT ====================
-export const BlockSeat = model("Flight_BlockSeat", BlockSeatSchema);
+export const BlockSeat = model<IBlockSeat, IBlockSeatModel>(
+  "Flight_BlockSeat",
+  BlockSeatSchema
+);

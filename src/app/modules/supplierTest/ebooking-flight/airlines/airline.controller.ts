@@ -1,6 +1,6 @@
-import {  Request, Response } from "express";
-import catchAsync from "../../../shared/catchAsync";
-import sendResponse from "../../../shared/sendResponse";
+import { Request, Response } from "express";
+import catchAsync from "../../../../shared/catchAsync";
+import sendResponse from "../../../../shared/sendResponse";
 import { searchAirlines } from "./airline.service";
 
 export const searchAirlinesController = catchAsync(

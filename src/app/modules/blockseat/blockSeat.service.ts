@@ -34,9 +34,15 @@ export interface CreateBlockSeatRequest {
     price: number;
   }>;
   currency: string;
-  status: "Available" | "Unavailable";
+  status?: "Available" | "Unavailable";
   fareRules?: {
-    template?: string;
+    template?:
+      | "FLEXIBLE"
+      | "SEMI_FLEXIBLE"
+      | "STANDARD"
+      | "RESTRICTED"
+      | "NON_REFUNDABLE"
+      | "MANUAL_ENTRY";
     refundable?: boolean;
     changeFee?: number;
     cancellationFee?: number;
@@ -57,6 +63,8 @@ export interface CreateBlockSeatRequest {
     };
   };
   remarks?: string;
+  autoRelease?: boolean;
+  releaseDate?: Date;
 }
 
 // ==================== CREATE BLOCK SEAT ====================
@@ -70,6 +78,7 @@ export const createBlockSeat = async (
       throw new AppError(httpStatus.BAD_REQUEST, "Block seat name is required");
     }
 
+    // Validate classes
     if (!request.classes || request.classes.length === 0) {
       throw new AppError(
         httpStatus.BAD_REQUEST,
@@ -77,6 +86,7 @@ export const createBlockSeat = async (
       );
     }
 
+    // Validate available dates
     if (!request.availableDates || request.availableDates.length === 0) {
       throw new AppError(
         httpStatus.BAD_REQUEST,
@@ -107,13 +117,13 @@ export const createBlockSeat = async (
       // Route information
       route: request.route,
 
-      // Available dates
+      // Available dates - keep original format
       availableDates: request.availableDates,
 
       // Classes with initial booking count as 0
       classes: request.classes.map((classItem) => ({
         classId: classItem.classId,
-        className: classItem.className,
+        className: classItem.className || `Class ${classItem.classId}`,
         totalSeats: classItem.totalSeats,
         bookedSeats: 0,
         availableSeats: classItem.totalSeats,
@@ -123,9 +133,6 @@ export const createBlockSeat = async (
 
       // Currency
       currency: request.currency,
-
-      // Status
-      status: request.status || "Available",
 
       // Fare rules
       fareRules: {
@@ -154,11 +161,16 @@ export const createBlockSeat = async (
         },
       },
 
+      // Status
+      status: request.status || "Available",
+
       // Wholesaler reference
       wholesaler: wholesalerId,
 
       // Additional information
       remarks: request.remarks,
+      autoRelease: request.autoRelease || false,
+      releaseDate: request.releaseDate,
 
       // Timestamps
       createdAt: new Date(),

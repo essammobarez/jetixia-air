@@ -130,9 +130,19 @@ export const createBlockSeat = async (
   wholesalerId: string
 ): Promise<{ success: boolean; blockSeat: BlockSeatResponse }> => {
   try {
-    // Generate block seat ID
-    const { blockSeatId, sequenceNumber } =
-      await BlockSeat.generateBlockSeatId();
+    // Generate block seat ID and sequence number, with proper error handling
+    let blockSeatId: string;
+    let sequenceNumber: number;
+    try {
+      const latestBlockSeat = await BlockSeat.findOne({}).sort({ sequenceNumber: -1 }).lean();
+      sequenceNumber = latestBlockSeat ? latestBlockSeat.sequenceNumber + 1 : 1;
+      blockSeatId = `BS${sequenceNumber.toString().padStart(6, '0')}`;
+    } catch (error) {
+      throw new AppError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        "Failed to generate block seat ID"
+      );
+    }
 
     // Validate classes
     if (!request.classes || request.classes.length === 0) {
@@ -254,18 +264,58 @@ export const createBlockSeat = async (
       _id: createdBlockSeat._id.toString(),
       blockSeatId: createdBlockSeat.blockSeatId,
       sequenceNumber: createdBlockSeat.sequenceNumber,
-      airline: createdBlockSeat.airline,
-      route: createdBlockSeat.route,
-      availableDates: createdBlockSeat.availableDates,
-      classes: createdBlockSeat.classes,
+      airline: {
+        code: createdBlockSeat.airline?.code || "",
+        name: createdBlockSeat.airline?.name || "",
+        country: createdBlockSeat.airline?.country,
+      },
+      route: {
+        from: {
+          country: createdBlockSeat.route?.from?.country || "",
+          iataCode: createdBlockSeat.route?.from?.iataCode || "",
+        },
+        to: {
+          country: createdBlockSeat.route?.to?.country || "",
+          iataCode: createdBlockSeat.route?.to?.iataCode || "",
+        },
+        tripType: createdBlockSeat.route?.tripType || "ONE_WAY",
+      },
+      availableDates: createdBlockSeat.availableDates?.map(date => date.departureDate) || [],
+      classes: createdBlockSeat.classes?.map(cls => ({
+        classId: cls.classId,
+        className: cls.className || "",
+        totalSeats: cls.totalSeats,
+        bookedSeats: cls.bookedSeats,
+        availableSeats: cls.availableSeats,
+        price: cls.price,
+        currency: cls.currency,
+      })) || [],
       currency: createdBlockSeat.currency,
-      fareRules: createdBlockSeat.fareRules,
-      baggageAllowance: createdBlockSeat.baggageAllowance,
-      commission: createdBlockSeat.commission,
+      fareRules: {
+        template: createdBlockSeat.fareRules?.template || "MANUAL_ENTRY",
+        refundable: createdBlockSeat.fareRules?.refundable || false,
+        changeFee: createdBlockSeat.fareRules?.changeFee || 0,
+        cancellationFee: createdBlockSeat.fareRules?.cancellationFee || 0,
+      },
+      baggageAllowance: {
+        checkedBags: createdBlockSeat.baggageAllowance?.checkedBags || 0,
+        weightPerBag: createdBlockSeat.baggageAllowance?.weightPerBag || "0kg",
+        carryOnWeight: createdBlockSeat.baggageAllowance?.carryOnWeight || "0kg",
+      },
+      commission: {
+        supplierCommission: {
+          type: createdBlockSeat.commission?.supplierCommission?.type || "FIXED_AMOUNT",
+          value: createdBlockSeat.commission?.supplierCommission?.value || 0,
+        },
+        agencyCommission: {
+          type: createdBlockSeat.commission?.agencyCommission?.type || "FIXED_AMOUNT",
+          value: createdBlockSeat.commission?.agencyCommission?.value || 0,
+        },
+      },
       status: createdBlockSeat.status,
-      remarks: createdBlockSeat.remarks,
+      remarks: createdBlockSeat.remarks || undefined,
       autoRelease: createdBlockSeat.autoRelease,
-      releaseDate: createdBlockSeat.releaseDate,
+      releaseDate: createdBlockSeat.releaseDate || undefined,
       totalSeats,
       totalBookedSeats,
       totalAvailableSeats,
@@ -335,18 +385,58 @@ export const getBlockSeatsByWholesaler = async (
           _id: blockSeat._id.toString(),
           blockSeatId: blockSeat.blockSeatId,
           sequenceNumber: blockSeat.sequenceNumber,
-          airline: blockSeat.airline,
-          route: blockSeat.route,
-          availableDates: blockSeat.availableDates,
-          classes: blockSeat.classes,
+          airline: {
+            code: blockSeat.airline?.code || "",
+            name: blockSeat.airline?.name || "",
+            country: blockSeat.airline?.country,
+          },
+          route: {
+            from: {
+              country: blockSeat.route?.from?.country || "",
+              iataCode: blockSeat.route?.from?.iataCode || "",
+            },
+            to: {
+              country: blockSeat.route?.to?.country || "",
+              iataCode: blockSeat.route?.to?.iataCode || "",
+            },
+            tripType: blockSeat.route?.tripType || "ONE_WAY",
+          },
+          availableDates: blockSeat.availableDates?.map(date => date.departureDate) || [],
+          classes: blockSeat.classes?.map(cls => ({
+            classId: cls.classId,
+            className: cls.className || "",
+            totalSeats: cls.totalSeats,
+            bookedSeats: cls.bookedSeats,
+            availableSeats: cls.availableSeats,
+            price: cls.price,
+            currency: cls.currency,
+          })) || [],
           currency: blockSeat.currency,
-          fareRules: blockSeat.fareRules,
-          baggageAllowance: blockSeat.baggageAllowance,
-          commission: blockSeat.commission,
+          fareRules: {
+            template: blockSeat.fareRules?.template || "MANUAL_ENTRY",
+            refundable: blockSeat.fareRules?.refundable || false,
+            changeFee: blockSeat.fareRules?.changeFee || 0,
+            cancellationFee: blockSeat.fareRules?.cancellationFee || 0,
+          },
+          baggageAllowance: {
+            checkedBags: blockSeat.baggageAllowance?.checkedBags || 0,
+            weightPerBag: blockSeat.baggageAllowance?.weightPerBag || "0kg",
+            carryOnWeight: blockSeat.baggageAllowance?.carryOnWeight || "0kg",
+          },
+          commission: {
+            supplierCommission: {
+              type: blockSeat.commission?.supplierCommission?.type || "FIXED_AMOUNT",
+              value: blockSeat.commission?.supplierCommission?.value || 0,
+            },
+            agencyCommission: {
+              type: blockSeat.commission?.agencyCommission?.type || "FIXED_AMOUNT",
+              value: blockSeat.commission?.agencyCommission?.value || 0,
+            },
+          },
           status: blockSeat.status,
-          remarks: blockSeat.remarks,
+          remarks: blockSeat.remarks || undefined,
           autoRelease: blockSeat.autoRelease,
-          releaseDate: blockSeat.releaseDate,
+          releaseDate: blockSeat.releaseDate || undefined,
           totalSeats,
           totalBookedSeats,
           totalAvailableSeats,
@@ -411,18 +501,58 @@ export const getBlockSeatById = async (
       _id: blockSeat._id.toString(),
       blockSeatId: blockSeat.blockSeatId,
       sequenceNumber: blockSeat.sequenceNumber,
-      airline: blockSeat.airline,
-      route: blockSeat.route,
-      availableDates: blockSeat.availableDates,
-      classes: blockSeat.classes,
+      airline: {
+        code: blockSeat.airline?.code || "",
+        name: blockSeat.airline?.name || "",
+        country: blockSeat.airline?.country,
+      },
+      route: {
+        from: {
+          country: blockSeat.route?.from?.country || "",
+          iataCode: blockSeat.route?.from?.iataCode || "",
+        },
+        to: {
+          country: blockSeat.route?.to?.country || "",
+          iataCode: blockSeat.route?.to?.iataCode || "",
+        },
+        tripType: blockSeat.route?.tripType || "ONE_WAY",
+      },
+      availableDates: blockSeat.availableDates?.map(date => date.departureDate) || [],
+      classes: blockSeat.classes?.map(cls => ({
+        classId: cls.classId,
+        className: cls.className || "",
+        totalSeats: cls.totalSeats,
+        bookedSeats: cls.bookedSeats,
+        availableSeats: cls.availableSeats,
+        price: cls.price,
+        currency: cls.currency,
+      })) || [],
       currency: blockSeat.currency,
-      fareRules: blockSeat.fareRules,
-      baggageAllowance: blockSeat.baggageAllowance,
-      commission: blockSeat.commission,
+      fareRules: {
+        template: blockSeat.fareRules?.template || "MANUAL_ENTRY",
+        refundable: blockSeat.fareRules?.refundable || false,
+        changeFee: blockSeat.fareRules?.changeFee || 0,
+        cancellationFee: blockSeat.fareRules?.cancellationFee || 0,
+      },
+      baggageAllowance: {
+        checkedBags: blockSeat.baggageAllowance?.checkedBags || 0,
+        weightPerBag: blockSeat.baggageAllowance?.weightPerBag || "0kg",
+        carryOnWeight: blockSeat.baggageAllowance?.carryOnWeight || "0kg",
+      },
+      commission: {
+        supplierCommission: {
+          type: blockSeat.commission?.supplierCommission?.type || "FIXED_AMOUNT",
+          value: blockSeat.commission?.supplierCommission?.value || 0,
+        },
+        agencyCommission: {
+          type: blockSeat.commission?.agencyCommission?.type || "FIXED_AMOUNT",
+          value: blockSeat.commission?.agencyCommission?.value || 0,
+        },
+      },
       status: blockSeat.status,
-      remarks: blockSeat.remarks,
+      remarks: blockSeat.remarks || undefined,
       autoRelease: blockSeat.autoRelease,
-      releaseDate: blockSeat.releaseDate,
+      releaseDate: blockSeat.releaseDate || undefined,
       totalSeats,
       totalBookedSeats,
       totalAvailableSeats,

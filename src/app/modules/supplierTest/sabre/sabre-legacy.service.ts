@@ -22,7 +22,9 @@ export class SabreLegacyService {
       const baseUrl = config.sabre.baseUrl;
 
       if (!clientId || !clientSecret) {
-        throw new Error("Sabre credentials not configured. Please check SABRE_CLIENT_ID and SABRE_CLIENT_SECRET in environment variables.");
+        throw new Error(
+          "Sabre credentials not configured. Please check SABRE_CLIENT_ID and SABRE_CLIENT_SECRET in environment variables."
+        );
       }
 
       // v2 Double Base64 encoding method (WORKING METHOD)
@@ -95,9 +97,7 @@ export class SabreLegacyService {
           TravelerInfoSummary: {
             AirTravelerAvail: [
               {
-                PassengerTypeQuantity: [
-                  { Code: "ADT", Quantity: adults },
-                ],
+                PassengerTypeQuantity: [{ Code: "ADT", Quantity: adults }],
               },
             ],
           },
@@ -109,7 +109,7 @@ export class SabreLegacyService {
       console.log("   Request:", JSON.stringify(requestData, null, 2));
 
       const response = await axios({
-        method: 'POST',
+        method: "POST",
         url: `${baseUrl}/v1/shop/flights`,
         data: requestData,
         headers: {
@@ -126,8 +126,27 @@ export class SabreLegacyService {
         success: true,
         data: response.data,
       };
-
     } catch (error: unknown) {
       if (axios.isAxiosError(error)) {
         console.error("❌ Legacy BFM Error:");
+        console.error("   Status:", error.response?.status);
         console.error(
+          "   Data:",
+          JSON.stringify(error.response?.data, null, 2)
+        );
+        console.error("   Message:", error.message);
+
+        return {
+          success: false,
+          error: error.response?.data || error.message,
+        };
+      }
+
+      console.error("❌ Unexpected Error:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
+    }
+  }
+}

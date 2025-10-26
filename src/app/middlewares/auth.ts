@@ -9,7 +9,7 @@ import { User } from "../modules/user/user.model";
 import Subuser from "../modules/subuser/subuser.model";
 import { Subadmin } from "../modules/SubAdmin/subAdmin.model";
 import { ISubadmin } from "../modules/SubAdmin/subAdmin.interface";
-import { SubAgent } from "../modules/sub-agency/subAgency.model";
+// import { SubAgent } from "../modules/sub-agency/subAgency.model";
 
 const authWithUserStatus =
   (...requiredRoles: string[]) =>
@@ -54,11 +54,11 @@ const authWithUserStatus =
             "isVerified isLocked wholesalerId wholesaler"
           );
         }
-        if (!user) {
-          user = await SubAgent.findById(verifiedUser.userId).select(
-            "-password"
-          );
-        }
+        // if (!user) {
+        //   user = await SubAgent.findById(verifiedUser.userId).select(
+        //     "-password"
+        //   );
+        // }
 
         // 5. Try Subadmin
         if (!user) {

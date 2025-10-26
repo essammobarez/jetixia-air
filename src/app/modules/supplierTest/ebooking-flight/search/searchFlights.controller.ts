@@ -1,12 +1,22 @@
 import { Request, Response } from "express";
 import httpStatus from "http-status";
-import catchAsync from "../../../shared/catchAsync";
-import sendResponse from "../../../shared/sendResponse";
+import catchAsync from "../../../../shared/catchAsync";
+import sendResponse from "../../../../shared/sendResponse";
 import { searchFlightsService } from "./searchFlights.service";
 import { searchLocationByName } from "./searchDB.service";
 
 const fetchFlights = catchAsync(async (req: Request, res: Response) => {
-  const { from, to, tripType, segments, traveller, classType, airline, nationality, date } = req.body;
+  const {
+    from,
+    to,
+    tripType,
+    segments,
+    traveller,
+    classType,
+    airline,
+    nationality,
+    date,
+  } = req.body;
 
   const lowerTrip = (tripType || "").toLowerCase();
 
@@ -36,18 +46,19 @@ const fetchFlights = catchAsync(async (req: Request, res: Response) => {
       data: null,
     });
   }
-  
+
   let originDestinations;
 
   if (lowerTrip === "multicity") {
-    
     originDestinations = await Promise.all(
       segments.map(async (seg: { from: string; to: string; date: string }) => {
         const fromRes = await searchLocationByName(seg.from);
         const toRes = await searchLocationByName(seg.to);
 
         if (!fromRes.length || !toRes.length) {
-          throw new Error(`Location not found for segment: ${seg.from} -> ${seg.to}`);
+          throw new Error(
+            `Location not found for segment: ${seg.from} -> ${seg.to}`
+          );
         }
 
         return {
@@ -60,7 +71,7 @@ const fetchFlights = catchAsync(async (req: Request, res: Response) => {
   } else {
     const resultsFrom = await searchLocationByName(from || segments?.[0]?.from);
     const resultsTo = await searchLocationByName(to || segments?.[0]?.to);
-console.log(resultsFrom,resultsTo)
+    console.log(resultsFrom, resultsTo);
     if (!resultsFrom.length || !resultsTo.length) {
       return sendResponse(res, {
         statusCode: httpStatus.NOT_FOUND,
@@ -71,20 +82,20 @@ console.log(resultsFrom,resultsTo)
     }
 
     if (segments?.length) {
-      
       originDestinations = await Promise.all(
-        segments.map(async (seg: { from: string; to: string; date: string }) => {
-          const fromRes = await searchLocationByName(seg.from);
-          const toRes = await searchLocationByName(seg.to);
-          return {
-            origin: { code: fromRes[0].code },
-            destination: { code: toRes[0].code },
-            date: seg.date,
-          };
-        })
+        segments.map(
+          async (seg: { from: string; to: string; date: string }) => {
+            const fromRes = await searchLocationByName(seg.from);
+            const toRes = await searchLocationByName(seg.to);
+            return {
+              origin: { code: fromRes[0].code },
+              destination: { code: toRes[0].code },
+              date: seg.date,
+            };
+          }
+        )
       );
     } else {
-      
       originDestinations = [
         {
           origin: { code: resultsFrom[0].code },
@@ -95,14 +106,15 @@ console.log(resultsFrom,resultsTo)
     }
   }
 
-  
-  const normalizedTravellers = (traveller || [{ ptc: "ADT", count: 1 }]).map((t: any) => {
-    let ptcUpper = (t.ptc || "").toString().trim().toLowerCase();
-    if (ptcUpper === "adult") ptcUpper = "ADT";
-    else if (ptcUpper === "child") ptcUpper = "CHD";
-    else ptcUpper = ptcUpper.toUpperCase();
-    return { ...t, ptc: ptcUpper };
-  });
+  const normalizedTravellers = (traveller || [{ ptc: "ADT", count: 1 }]).map(
+    (t: any) => {
+      let ptcUpper = (t.ptc || "").toString().trim().toLowerCase();
+      if (ptcUpper === "adult") ptcUpper = "ADT";
+      else if (ptcUpper === "child") ptcUpper = "CHD";
+      else ptcUpper = ptcUpper.toUpperCase();
+      return { ...t, ptc: ptcUpper };
+    }
+  );
 
   const passengers = {
     leaderNationality: nationality || 158,
@@ -118,7 +130,6 @@ console.log(resultsFrom,resultsTo)
     language: "en_GB",
     timeout: 10,
   };
-
 
   const data = await searchFlightsService(payload);
 
