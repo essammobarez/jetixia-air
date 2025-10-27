@@ -12,17 +12,17 @@ async function fetchAccessToken() {
     data.append("grant_type", "client_credentials");
 
     if (
-      !process.env.CLIENT_ID ||
-      !process.env.TOKEN_URL ||
-      !process.env.CLIENT_SECRET ||
-      !process.env.REQUESTED_SCOPES
+      !process.env.EBOOKING_CLIENT_ID ||
+      !process.env.EBOOKING_TOKEN_URL ||
+      !process.env.EBOOKING_CLIENT_SECRET ||
+      !process.env.EBOOKING_REQUESTED_SCOPES
     ) {
       throw new Error("Required environment variables are missing.");
     }
 
-    data.append("client_id", process.env.CLIENT_ID);
-    data.append("client_secret", process.env.CLIENT_SECRET);
-    data.append("scope", process.env.REQUESTED_SCOPES);
+    data.append("client_id", process.env.EBOOKING_CLIENT_ID);
+    data.append("client_secret", process.env.EBOOKING_CLIENT_SECRET);
+    data.append("scope", process.env.EBOOKING_REQUESTED_SCOPES);
 
     // Log request details
     console.log("TOKEN_URL:", process.env.TOKEN_URL);
@@ -32,7 +32,7 @@ async function fetchAccessToken() {
     console.log("Request Body:", data.toString());
 
     // Make the POST request
-    const response = await axios.post(process.env.TOKEN_URL, data.toString(), {
+    const response = await axios.post(process.env.EBOOKING_TOKEN_URL, data.toString(), {
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
     });
 

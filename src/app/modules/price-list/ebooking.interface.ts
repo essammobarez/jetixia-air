@@ -196,6 +196,95 @@ export interface EbookingFlightOffer {
   [key: string]: any;
 }
 
+// eBooking Availability/Confirmation Interfaces
+export interface EbookingAvailabilityRequest {
+  srk: string;
+  offerIndex: string;
+  itineraryIndex?: number; // Optional, defaults to 0
+  token: string;
+}
+
+export interface EbookingAvailabilityResponse {
+  availabilityToken: string;
+  srk: string;
+  pricedOffer: EbookingPricedOffer;
+  dataLists: EbookingDataLists;
+  _links: {
+    self: { href: string };
+    credit?: { href: string };
+  };
+}
+
+export interface EbookingPricedOffer {
+  index: string;
+  upsellSupport: boolean;
+  flightsOverview: Array<{
+    itineraryIndex: number;
+    flightReferences: string[];
+  }>;
+  fareDetails: {
+    validatingCarrier: { code: string; name: string };
+    nonRefundable: boolean | null;
+    corporateFare: boolean | null;
+    autoTicketable: boolean;
+    totalPrice: { selling: { value: number; currency: string } };
+    price: {
+      currency: string;
+      baseFare: number;
+      fullFare: number;
+      serviceFee: number;
+    };
+    brandedFare: Array<{
+      code: string;
+      name: string;
+      departure: string;
+      arrival: string;
+      cabin: string | null;
+      carrier: string;
+      description: string | null;
+      serviceList?: any[];
+    }>;
+    ancillaryFares: any[];
+    timeLimits: {
+      offerExpiration: string;
+      ticketingTimeLimit: string;
+      lastTicketingDate: string;
+    };
+  };
+  offerItems: Array<{
+    ptc: string;
+    count: number;
+    fareBasis: string[];
+    price: {
+      currency: string;
+      baseFare: number;
+      fullFare: number;
+      serviceFee: number;
+      taxes: Array<{
+        currency: string;
+        amount: number;
+        type: string | null;
+        code: string;
+        extcode: string;
+        description: string | null;
+      }>;
+    };
+    baggageAllowance?: any[];
+    fareComponents?: any[];
+  }>;
+  paymentMethods?: any[];
+  mandatoryServices?: any[];
+  optionalServices?: any[];
+  offerConfiguration?: {
+    contactDetails?: { required: boolean; owner: boolean };
+    identificationDocument?: any;
+    frequentFlyerCard?: any;
+    OSIRemarks?: any;
+    birthdate?: any;
+    priceModifiers?: any;
+  };
+}
+
 export interface EbookingItinerary {
   duration: string;
   segments: EbookingSegment[];

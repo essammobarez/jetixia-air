@@ -10,7 +10,14 @@ const fetchSeatMaps = catchAsync(async (req: Request, res: Response) => {
   console.log("Request Body:", JSON.stringify(req.body, null, 2));
 
   const request: SeatMapRequest = {
+    supplier: req.body.supplier || (req.body.srk ? "ebooking" : "amadeus"),
     flightOffers: req.body.flightOffers,
+    // ebooking specific
+    srk: req.body.srk,
+    offerIndex: req.body.offerIndex,
+    token: req.body.token,
+    availabilityToken: req.body.availabilityToken,
+    segmentReference: req.body.segmentReference,
   };
 
   const result = await getSeatMaps(request);
