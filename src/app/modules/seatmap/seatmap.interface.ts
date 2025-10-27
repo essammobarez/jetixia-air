@@ -1,5 +1,12 @@
 export interface SeatMapRequest {
-  flightOffers: any[]; // Flight offers from pricing confirmation API
+  supplier?: "amadeus" | "ebooking"; // Supplier indication
+  flightOffers?: any[]; // For Amadeus - flight offers from pricing confirmation API
+  // For ebooking
+  srk?: string;
+  offerIndex?: string;
+  token?: string; // Search results token
+  availabilityToken?: string; // Availability token from pricing response
+  segmentReference?: string;
 }
 
 export interface SeatCharacteristics {

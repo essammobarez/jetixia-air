@@ -273,3 +273,124 @@ export const searchEbookingFlightOffers = async (
     offers: expandedOffers.length > 0 ? expandedOffers : offers,
   };
 };
+
+/**
+ * Call ebooking availability API to confirm pricing
+ */
+export const getEbookingAvailability = async (
+  srk: string,
+  offerIndex: string,
+  itineraryIndex: number = 0,
+  token: string
+) => {
+  try {
+    // Get access token
+    const accessToken = await getEbookingAccessToken();
+
+    // Build availability API URL with itinerary index
+    const baseUrl = getEbookingBaseUrl();
+    const availabilityUrl = `${baseUrl}/tbs/reseller/api/flights/v1/search/results/${srk}/offers/${offerIndex}/availability`;
+
+    // Call availability API with itinerary index in request body
+    const response = await axios.post(
+      availabilityUrl,
+      {
+        itineraryIndex,
+        upsellCode: null,
+        offer: {
+          itineraryIndex,
+          upsellCode: null,
+          optionalServiceList: [],
+          mandatoryServiceList: [],
+          paidSeatList: [],
+        },
+      },
+      {
+        params: { token },
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    console.log("✅ ebooking availability successful");
+    return response.data;
+  } catch (error: unknown) {
+    const err = error as {
+      response?: { status: number; data: unknown };
+      request?: unknown;
+      message?: string;
+    };
+
+    console.error("❌ Error getting ebooking availability:", err);
+
+    if (err.response) {
+      console.error("Response error:", err.response.status, err.response.data);
+    }
+
+    throw new AppError(
+      httpStatus.INTERNAL_SERVER_ERROR,
+      "Failed to get availability from ebooking API"
+    );
+  }
+};
+
+/**
+ * Call ebooking seat map API
+ */
+export const getEbookingSeatMap = async (
+  srk: string,
+  offerIndex: string,
+  token: string,
+  availabilityToken: string,
+  segmentReference: string
+) => {
+  try {
+    // Get access token
+    const accessToken = await getEbookingAccessToken();
+
+    // Build seat map API URL
+    const baseUrl = getEbookingBaseUrl();
+    const seatMapUrl = `${baseUrl}/tbs/reseller/api/flights/v1/search/results/${srk}/offers/${offerIndex}/availability/seatMap`;
+
+    console.log("🔍 Calling ebooking seatmap API...");
+    console.log(`URL: ${seatMapUrl}`);
+    console.log(`token: ${token}`);
+    console.log(`availabilityToken: ${availabilityToken}`);
+    console.log(`segmentReference: ${segmentReference}`);
+
+    // Call seat map API with both tokens
+    const response = await axios.get(seatMapUrl, {
+      params: {
+        token, // Search results token
+        availabilityToken, // Availability token from pricing response
+        segmentReference,
+      },
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    console.log("✅ ebooking seatmap successful");
+    return response.data;
+  } catch (error: unknown) {
+    const err = error as {
+      response?: { status: number; data: unknown };
+      request?: unknown;
+      message?: string;
+    };
+
+    console.error("❌ Error getting ebooking seatmap:", err);
+
+    if (err.response) {
+      console.error("Response error:", err.response.status, err.response.data);
+    }
+
+    throw new AppError(
+      httpStatus.INTERNAL_SERVER_ERROR,
+      "Failed to get seat map from ebooking API"
+    );
+  }
+};

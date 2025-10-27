@@ -8,7 +8,13 @@ import { mockPricingConfirmationData } from "./pricing.test";
 
 const confirmFlightPricing = catchAsync(async (req: Request, res: Response) => {
   const request: FlightOfferPricingRequest = {
+    supplier: req.body.supplier || (req.body.srk ? "ebooking" : "amadeus"),
     flightOffers: req.body.flightOffers,
+    // ebooking specific
+    srk: req.body.srk,
+    offerIndex: req.body.offerIndex,
+    itineraryIndex: req.body.itineraryIndex,
+    token: req.body.token,
   };
 
   const result = await getFlightOfferPricing(request);
@@ -17,7 +23,7 @@ const confirmFlightPricing = catchAsync(async (req: Request, res: Response) => {
     statusCode: httpStatus.OK,
     success: true,
     message: "Flight pricing confirmed successfully!",
-    data: result,
+    data: result, // Result already includes unified response, raw data, and supplier
   });
 });
 

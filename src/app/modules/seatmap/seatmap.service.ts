@@ -6,15 +6,79 @@ import {
   getAmadeusAccessToken,
   getAmadeusBaseUrl,
 } from "../price-list/priceList.utils";
+import { getEbookingSeatMap } from "../price-list/ebooking.service";
+
+/**
+ * Handle ebooking seat map request
+ */
+async function handleEbookingSeatMap(request: SeatMapRequest) {
+  try {
+    // Validate ebooking request parameters
+    if (
+      !request.srk ||
+      !request.offerIndex ||
+      !request.token ||
+      !request.availabilityToken ||
+      !request.segmentReference
+    ) {
+      throw new AppError(
+        httpStatus.BAD_REQUEST,
+        "Missing required ebooking seatmap parameters: srk, offerIndex, token, availabilityToken, and segmentReference are required"
+      );
+    }
+
+    console.log("=== EBOOKING SEATMAP API REQUEST START ===");
+
+    // Call ebooking seat map API
+    const ebookingResponse = await getEbookingSeatMap(
+      request.srk,
+      request.offerIndex,
+      request.token,
+      request.availabilityToken,
+      request.segmentReference
+    );
+
+    console.log("✅ ebooking seatmap successful");
+    console.log("=== EBOOKING SEATMAP API REQUEST END ===\n");
+
+    // Return ebooking response as-is (no transformation)
+    return ebookingResponse;
+  } catch (error: unknown) {
+    const err = error as {
+      response?: { status: number; data: unknown };
+      message?: string;
+    };
+
+    console.error("❌ ebooking seatmap error:", err);
+
+    if (err?.response?.status === 400) {
+      throw new AppError(
+        httpStatus.BAD_REQUEST,
+        "Invalid ebooking seatmap request"
+      );
+    }
+
+    throw new AppError(
+      httpStatus.INTERNAL_SERVER_ERROR,
+      "Failed to get seat map from ebooking API"
+    );
+  }
+}
 
 /**
  * Get seat maps for flight offers
- * Endpoint: POST /v1/shopping/seatmaps
- * Documentation: https://developers.amadeus.com/self-service/category/flights/api-doc/seatmap-display
+ * Supports both Amadeus and ebooking suppliers
  */
-export const getSeatMaps = async (
-  request: SeatMapRequest
-): Promise<SeatMapResponse> => {
+export const getSeatMaps = async (request: SeatMapRequest): Promise<any> => {
+  // Detect supplier
+  const supplier = request.supplier || (request.srk ? "ebooking" : "amadeus");
+
+  // Handle ebooking
+  if (supplier === "ebooking") {
+    return await handleEbookingSeatMap(request);
+  }
+
+  // Handle Amadeus (existing flow)
   try {
     console.log("=== SEATMAP API REQUEST START ===");
 

@@ -2,12 +2,13 @@ import { z } from "zod";
 
 const flightOfferPricingSchema = z.object({
   body: z.object({
-    flightOffers: z
-      .array(z.any(), {
-        required_error: "Flight offers array is required",
-      })
-      .min(1, "At least one flight offer is required")
-      .max(6, "Maximum 6 flight offers allowed"),
+    supplier: z.enum(["amadeus", "ebooking"]).optional(),
+    flightOffers: z.array(z.any()).optional(),
+    // ebooking fields
+    srk: z.string().optional(),
+    offerIndex: z.string().optional(),
+    itineraryIndex: z.number().optional(),
+    token: z.string().optional(),
   }),
 });
 

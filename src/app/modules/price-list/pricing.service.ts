@@ -7,6 +7,8 @@ import {
 } from "./pricing.interface";
 import { getAmadeusAccessToken, getAmadeusBaseUrl } from "./priceList.utils";
 import { AirlineInfo, AirportInfo } from "./priceList.interface";
+import { getEbookingAvailability } from "./ebooking.service";
+import { transformEbookingToUnified } from "./ebooking-pricing.transformer";
 
 // Cache for airline information (shared with search API)
 const airlineCache = new Map<string, AirlineInfo>();
@@ -201,13 +203,84 @@ async function enrichPricingFlightOffers(
 }
 
 /**
+ * Handle ebooking pricing confirmation
+ */
+async function handleEbookingPricing(
+  request: FlightOfferPricingRequest
+): Promise<FlightOfferPricingResponse> {
+  try {
+    // Validate ebooking request parameters
+    if (!request.srk || !request.offerIndex || !request.token) {
+      throw new AppError(
+        httpStatus.BAD_REQUEST,
+        "Missing required ebooking parameters: srk, offerIndex, and token are required"
+      );
+    }
+
+    // Call ebooking availability API
+    const ebookingResponse = await getEbookingAvailability(
+      request.srk!,
+      request.offerIndex!,
+      request.itineraryIndex || 0,
+      request.token!
+    );
+
+    // Transform ebooking response to unified format
+    const unifiedResponse = transformEbookingToUnified(ebookingResponse);
+
+    return {
+      ...unifiedResponse,
+      raw: ebookingResponse, // Keep original ebooking response
+      supplier: "ebooking",
+    };
+  } catch (error: unknown) {
+    const err = error as {
+      response?: {
+        status: number;
+        data?: {
+          errors?: Array<{ detail?: string; title?: string }>;
+        };
+      };
+      message?: string;
+    };
+
+    console.error("❌ ebooking pricing error:", err);
+
+    if (err?.response?.status === 400) {
+      const errorDetail =
+        err?.response?.data?.errors?.[0]?.detail ||
+        err?.response?.data?.errors?.[0]?.title ||
+        "Invalid ebooking availability request";
+      throw new AppError(httpStatus.BAD_REQUEST, errorDetail);
+    }
+
+    throw new AppError(
+      httpStatus.INTERNAL_SERVER_ERROR,
+      "Failed to get pricing from ebooking API"
+    );
+  }
+}
+
+/**
  * Get confirmed flight pricing with detailed information
- * Endpoint: POST /v1/shopping/flight-offers/pricing
- * Documentation: https://developers.amadeus.com/self-service/category/flights/api-doc/flight-offers-price
+ * Supports both Amadeus and ebooking suppliers
  */
 export const getFlightOfferPricing = async (
   request: FlightOfferPricingRequest
 ): Promise<FlightOfferPricingResponse> => {
+  // Detect supplier
+  const supplier =
+    request.supplier ||
+    (request.srk && request.offerIndex && request.token
+      ? "ebooking"
+      : "amadeus");
+
+  // Handle ebooking
+  if (supplier === "ebooking") {
+    return await handleEbookingPricing(request);
+  }
+
+  // Handle Amadeus (existing flow)
   try {
     // Step 1: Get access token with authorization
     const token = await getAmadeusAccessToken();
@@ -252,7 +325,14 @@ export const getFlightOfferPricing = async (
       pricingResponse.data.flightOffers = enrichedOffers;
     }
 
-    return pricingResponse;
+    // Store original Amadeus response before enrichment
+    const originalResponse = JSON.parse(JSON.stringify(response.data));
+
+    return {
+      ...pricingResponse,
+      raw: originalResponse, // Keep original Amadeus response
+      supplier: "amadeus",
+    };
   } catch (error: unknown) {
     const err = error as {
       response?: {

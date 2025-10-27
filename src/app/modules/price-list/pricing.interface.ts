@@ -1,5 +1,11 @@
 export interface FlightOfferPricingRequest {
-  flightOffers: any[]; // Flexible array - comes from previous price-list API
+  supplier?: "amadeus" | "ebooking"; // Optional supplier indication
+  flightOffers?: any[]; // For Amadeus - comes from previous price-list API
+  // For ebooking
+  srk?: string;
+  offerIndex?: string;
+  itineraryIndex?: number;
+  token?: string;
 }
 
 export interface FlightOfferPricingResponse {
@@ -20,4 +26,7 @@ export interface FlightOfferPricingResponse {
     currencies?: Record<string, any>;
     carriers?: Record<string, any>;
   };
+  // Raw supplier response
+  raw?: any;
+  supplier?: "amadeus" | "ebooking";
 }

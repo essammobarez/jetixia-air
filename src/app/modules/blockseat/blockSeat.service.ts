@@ -261,3 +261,238 @@ export const getBlockSeatById = async (
     );
   }
 };
+
+// ==================== SEARCH BLOCK SEATS BY ROUTE ====================
+export const searchBlockSeatsByRoute = async (
+  fromIata: string,
+  toIata: string,
+  tripType: "ONE_WAY" | "ROUND_TRIP",
+  page = 1,
+  limit = 10,
+  wholesalerId?: string
+): Promise<{
+  blockSeats: any[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}> => {
+  try {
+    const skip = (page - 1) * limit;
+
+    // Build search query
+    const searchQuery: any = {
+      status: "Available",
+      "route.tripType": tripType,
+    };
+
+    // Search for exact route match
+    searchQuery["route.from.iataCode"] = fromIata.toUpperCase();
+    searchQuery["route.to.iataCode"] = toIata.toUpperCase();
+
+    // Filter by wholesaler if provided
+    if (wholesalerId) {
+      searchQuery.wholesaler = wholesalerId;
+    }
+
+    // Count total matching documents
+    const total = await BlockSeat.countDocuments(searchQuery);
+
+    // Get paginated results
+    const blockSeats = await BlockSeat.find(searchQuery)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+    return {
+      blockSeats: blockSeats,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  } catch (error) {
+    throw new AppError(
+      httpStatus.INTERNAL_SERVER_ERROR,
+      error instanceof Error ? error.message : "Failed to search block seats"
+    );
+  }
+};
+
+// ==================== GET AVAILABLE DESTINATIONS BY ORIGIN ====================
+export const getAvailableDestinations = async (
+  fromIata: string,
+  tripType?: "ONE_WAY" | "ROUND_TRIP",
+  wholesalerId?: string
+): Promise<{
+  fromAirport: {
+    iataCode: string;
+    country: string;
+  } | null;
+  destinations: Array<{
+    toAirport: {
+      iataCode: string;
+      country: string;
+    };
+    tripType: string;
+    classCount: number;
+  }>;
+}> => {
+  try {
+    // Build search query
+    const searchQuery: any = {
+      status: "Available",
+      "route.from.iataCode": fromIata.toUpperCase(),
+    };
+
+    // Filter by trip type if provided
+    if (tripType) {
+      searchQuery["route.tripType"] = tripType;
+    }
+
+    // Filter by wholesaler if provided
+    if (wholesalerId) {
+      searchQuery.wholesaler = wholesalerId;
+    }
+
+    // Get all matching block seats
+    const blockSeats = await BlockSeat.find(searchQuery).lean();
+
+    if (!blockSeats || blockSeats.length === 0) {
+      return {
+        fromAirport: null,
+        destinations: [],
+      };
+    }
+
+    // Get unique from airport info from first result
+    const fromAirport = blockSeats[0]?.route?.from || null;
+
+    // Group by destination
+    const destinationMap = new Map<string, any>();
+
+    blockSeats.forEach((blockSeat: any) => {
+      const toIata = blockSeat.route.to.iataCode;
+      const key = `${toIata}-${blockSeat.route.tripType}`;
+
+      if (!destinationMap.has(key)) {
+        destinationMap.set(key, {
+          toAirport: blockSeat.route.to,
+          tripType: blockSeat.route.tripType,
+          classCount: blockSeat.classes?.length || 0,
+        });
+      } else {
+        const existing = destinationMap.get(key);
+        existing.classCount += blockSeat.classes?.length || 0;
+      }
+    });
+
+    const destinations = Array.from(destinationMap.values());
+
+    return {
+      fromAirport,
+      destinations,
+    };
+  } catch (error) {
+    throw new AppError(
+      httpStatus.INTERNAL_SERVER_ERROR,
+      error instanceof Error
+        ? error.message
+        : "Failed to get available destinations"
+    );
+  }
+};
+
+// ==================== GET AVAILABLE DATES FOR SPECIFIC ROUTE ====================
+export const getAvailableDatesForRoute = async (
+  fromIata: string,
+  toIata: string,
+  tripType: "ONE_WAY" | "ROUND_TRIP",
+  wholesalerId?: string
+): Promise<{
+  route: {
+    from: {
+      country: string;
+      iataCode: string;
+    };
+    to: {
+      country: string;
+      iataCode: string;
+    };
+    tripType: string;
+  };
+  availableDates: Array<{
+    departureDate: string;
+    returnDate?: string;
+  }>;
+}> => {
+  try {
+    // Build search query
+    const searchQuery: any = {
+      status: "Available",
+      "route.from.iataCode": fromIata.toUpperCase(),
+      "route.to.iataCode": toIata.toUpperCase(),
+      "route.tripType": tripType,
+    };
+
+    // Filter by wholesaler if provided
+    if (wholesalerId) {
+      searchQuery.wholesaler = wholesalerId;
+    }
+
+    // Get all matching block seats
+    const blockSeats = await BlockSeat.find(searchQuery).lean();
+
+    if (!blockSeats || blockSeats.length === 0) {
+      throw new AppError(
+        httpStatus.NOT_FOUND,
+        "No block seats found for this route"
+      );
+    }
+
+    // Get route info from first result
+    const route = blockSeats[0].route;
+
+    // Collect all unique available dates
+    const dateMap = new Map<string, any>();
+
+    blockSeats.forEach((blockSeat: any) => {
+      blockSeat.availableDates?.forEach((dateObj: any) => {
+        if (tripType === "ONE_WAY") {
+          const key = dateObj.departureDate;
+          if (!dateMap.has(key)) {
+            dateMap.set(key, { departureDate: dateObj.departureDate });
+          }
+        } else {
+          const fullKey = `${dateObj.departureDate}-${dateObj.returnDate}`;
+          if (!dateMap.has(fullKey)) {
+            dateMap.set(fullKey, {
+              departureDate: dateObj.departureDate,
+              returnDate: dateObj.returnDate,
+            });
+          }
+        }
+      });
+    });
+
+    const availableDates = Array.from(dateMap.values());
+
+    return {
+      route,
+      availableDates,
+    };
+  } catch (error) {
+    if (error instanceof AppError) {
+      throw error;
+    }
+    throw new AppError(
+      httpStatus.INTERNAL_SERVER_ERROR,
+      error instanceof Error ? error.message : "Failed to get available dates"
+    );
+  }
+};

@@ -44,6 +44,37 @@ router.get(
 );
 
 /**
+ * @route   GET /api/v1/block-seats/search/route
+ * @desc    Search block seats by route (from/to airports) and trip type
+ * @access  Public
+ * @query   fromIata: string (required), toIata: string (required), tripType: "ONE_WAY" | "ROUND_TRIP" (required), wholesalerId?: string (optional), page?: number, limit?: number
+ * @example /api/v1/block-seats/search/route?fromIata=DXB&toIata=LHR&tripType=ONE_WAY&wholesalerId=68ff6d5227c46a1c8dba909d
+ */
+router.get(
+  "/search/route",
+  authWithUserStatus(USER_ROLE.whole_saler, USER_ROLE.MODERATOR),
+  BlockSeatController.searchBlockSeatsByRoute
+);
+
+/**
+ * @route   GET /api/v1/block-seats/destinations
+ * @desc    Get all available destinations from a specific origin airport
+ * @access  Public
+ * @query   fromIata: string (required), tripType?: "ONE_WAY" | "ROUND_TRIP" (optional), wholesalerId?: string (optional)
+ * @example /api/v1/block-seats/destinations?fromIata=DXB&tripType=ONE_WAY
+ */
+router.get("/destinations", BlockSeatController.getAvailableDestinations);
+
+/**
+ * @route   GET /api/v1/block-seats/dates
+ * @desc    Get available dates for a specific route
+ * @access  Public
+ * @query   fromIata: string (required), toIata: string (required), tripType: "ONE_WAY" | "ROUND_TRIP" (required), wholesalerId?: string (optional)
+ * @example /api/v1/block-seats/dates?fromIata=DXB&toIata=LHR&tripType=ONE_WAY
+ */
+router.get("/dates", BlockSeatController.getAvailableDates);
+
+/**
  * @route   GET /api/v1/block-seats/:id
  * @desc    Get specific block seat by ID for authenticated wholesaler
  * @access  Private (Wholesaler)

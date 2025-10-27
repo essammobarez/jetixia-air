@@ -6,6 +6,9 @@ import {
   createBlockSeat,
   getBlockSeatsByWholesaler,
   getBlockSeatById,
+  searchBlockSeatsByRoute,
+  getAvailableDestinations,
+  getAvailableDatesForRoute,
   CreateBlockSeatRequest,
 } from "./blockSeat.service";
 
@@ -234,8 +237,140 @@ const getBlockSeatByIdController = catchAsync(
   }
 );
 
+/**
+ * Search block seats by route and trip type
+ * GET /api/v1/block-seats/search/route
+ */
+const searchBlockSeatsByRouteController = catchAsync(
+  async (req: any, res: Response) => {
+    const { fromIata, toIata, tripType } = req.query;
+    const wholesalerId = req.user?.wholesalerId;
+    // Validate required parameters
+    if (!fromIata || !toIata) {
+      return sendResponse(res, {
+        statusCode: httpStatus.BAD_REQUEST,
+        success: false,
+        message: "From IATA code and To IATA code are required",
+        data: null,
+      });
+    }
+
+    if (!tripType || !["ONE_WAY", "ROUND_TRIP"].includes(tripType)) {
+      return sendResponse(res, {
+        statusCode: httpStatus.BAD_REQUEST,
+        success: false,
+        message: "Trip type must be either ONE_WAY or ROUND_TRIP",
+        data: null,
+      });
+    }
+
+    // Get pagination parameters
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+
+    // Search block seats with optional wholesaler filter
+    const result = await searchBlockSeatsByRoute(
+      fromIata,
+      toIata,
+      tripType as "ONE_WAY" | "ROUND_TRIP",
+      page,
+      limit,
+      wholesalerId
+    );
+
+    return sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Block seats found successfully!",
+      data: result.blockSeats,
+      meta: result.pagination,
+    });
+  }
+);
+
+/**
+ * Get available destinations by origin airport
+ * GET /api/v1/block-seats/destinations
+ */
+const getAvailableDestinationsController = catchAsync(
+  async (req: any, res: Response) => {
+    const { fromIata, tripType, wholesalerId } = req.query;
+
+    // Validate required parameters
+    if (!fromIata) {
+      return sendResponse(res, {
+        statusCode: httpStatus.BAD_REQUEST,
+        success: false,
+        message: "From IATA code is required",
+        data: null,
+      });
+    }
+
+    // Get available destinations
+    const result = await getAvailableDestinations(
+      fromIata,
+      tripType as "ONE_WAY" | "ROUND_TRIP" | undefined,
+      wholesalerId
+    );
+
+    return sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Available destinations retrieved successfully!",
+      data: result,
+    });
+  }
+);
+
+/**
+ * Get available dates for specific route
+ * GET /api/v1/block-seats/dates
+ */
+const getAvailableDatesController = catchAsync(
+  async (req: any, res: Response) => {
+    const { fromIata, toIata, tripType, wholesalerId } = req.query;
+
+    // Validate required parameters
+    if (!fromIata || !toIata) {
+      return sendResponse(res, {
+        statusCode: httpStatus.BAD_REQUEST,
+        success: false,
+        message: "From IATA code and To IATA code are required",
+        data: null,
+      });
+    }
+
+    if (!tripType || !["ONE_WAY", "ROUND_TRIP"].includes(tripType)) {
+      return sendResponse(res, {
+        statusCode: httpStatus.BAD_REQUEST,
+        success: false,
+        message: "Trip type must be either ONE_WAY or ROUND_TRIP",
+        data: null,
+      });
+    }
+
+    // Get available dates for route
+    const result = await getAvailableDatesForRoute(
+      fromIata,
+      toIata,
+      tripType as "ONE_WAY" | "ROUND_TRIP",
+      wholesalerId
+    );
+
+    return sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Available dates retrieved successfully!",
+      data: result,
+    });
+  }
+);
+
 export const BlockSeatController = {
   createBlockSeat: createBlockSeatController,
   getBlockSeats: getBlockSeatsController,
   getBlockSeatById: getBlockSeatByIdController,
+  searchBlockSeatsByRoute: searchBlockSeatsByRouteController,
+  getAvailableDestinations: getAvailableDestinationsController,
+  getAvailableDates: getAvailableDatesController,
 };
