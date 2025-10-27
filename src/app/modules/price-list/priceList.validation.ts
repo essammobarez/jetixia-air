@@ -69,6 +69,15 @@ const flightOfferQuerySchema = z.object({
       .min(1, "Max must be at least 1")
       .max(250, "Max cannot exceed 250")
       .optional(),
+
+    supplier: z
+      .enum(["amadeus", "ebooking", "both"], {
+        errorMap: () => ({
+          message: "Supplier must be one of: amadeus, ebooking, both",
+        }),
+      })
+      .optional()
+      .default("amadeus"),
   }),
 });
 

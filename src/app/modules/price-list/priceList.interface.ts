@@ -9,6 +9,7 @@ export interface FlightOfferQuery {
   travelClass?: "ECONOMY" | "PREMIUM_ECONOMY" | "BUSINESS" | "FIRST";
   nonStop?: boolean;
   max?: number;
+  supplier?: "amadeus" | "ebooking" | "both";
 }
 
 export interface AirlineInfo {
