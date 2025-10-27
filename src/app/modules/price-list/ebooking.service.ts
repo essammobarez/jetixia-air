@@ -69,7 +69,7 @@ export const searchEbookingFlights = async (
   try {
     // Step 1: Get access token
     const token = await getEbookingAccessToken();
-
+    console.log("ebooking token", token);
     // Step 2: Convert query to ebooking format
     const searchRequest = convertToEbookingRequest(query);
 
