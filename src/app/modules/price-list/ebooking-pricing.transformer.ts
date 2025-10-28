@@ -293,3 +293,4 @@ function calculateTotalDuration(segments: any[]): string {
   // This is simplified, real calculation would parse durations
   return "PT10M"; // Placeholder
 }
+
