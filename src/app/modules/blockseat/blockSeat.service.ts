@@ -8,6 +8,66 @@ export interface AvailableDate {
   returnDate?: string; // Optional, only for ROUND_TRIP
 }
 
+export interface UpdateBlockSeatRequest {
+  name?: string;
+  airline?: {
+    code: string;
+    name: string;
+    country?: string;
+  };
+  route?: {
+    from: {
+      country: string;
+      iataCode: string;
+    };
+    to: {
+      country: string;
+      iataCode: string;
+    };
+    tripType: "ONE_WAY" | "ROUND_TRIP";
+  };
+  availableDates?: AvailableDate[];
+  removeDates?: AvailableDate[]; // Dates to remove from availableDates
+  classes?: Array<{
+    classId: number;
+    className?: string;
+    totalSeats: number;
+    price: number;
+  }>;
+  currency?: string;
+  status?: "Available" | "Unavailable";
+  fareRules?: {
+    template?:
+      | "FLEXIBLE"
+      | "SEMI_FLEXIBLE"
+      | "STANDARD"
+      | "RESTRICTED"
+      | "NON_REFUNDABLE"
+      | "MANUAL_ENTRY";
+    refundable?: boolean;
+    changeFee?: number;
+    cancellationFee?: number;
+  };
+  baggageAllowance?: {
+    checkedBags?: number;
+    weightPerBag?: string;
+    carryOnWeight?: string;
+  };
+  commission?: {
+    supplierCommission?: {
+      type: "FIXED_AMOUNT" | "PERCENTAGE";
+      value: number;
+    };
+    agencyCommission?: {
+      type: "FIXED_AMOUNT" | "PERCENTAGE";
+      value: number;
+    };
+  };
+  remarks?: string;
+  autoRelease?: boolean;
+  releaseDate?: Date;
+}
+
 export interface CreateBlockSeatRequest {
   name: string;
   airline: {
@@ -210,12 +270,15 @@ export const getBlockSeatsByWholesaler = async (
     const skip = (page - 1) * limit;
 
     const [blockSeats, total] = await Promise.all([
-      BlockSeat.find({ wholesaler: wholesalerId })
+      BlockSeat.find({ wholesaler: wholesalerId, isDeleted: { $ne: true } })
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
         .lean(),
-      BlockSeat.countDocuments({ wholesaler: wholesalerId }),
+      BlockSeat.countDocuments({
+        wholesaler: wholesalerId,
+        isDeleted: { $ne: true },
+      }),
     ]);
 
     return {
@@ -244,6 +307,7 @@ export const getBlockSeatById = async (
     const blockSeat = await BlockSeat.findOne({
       _id: blockSeatId,
       wholesaler: wholesalerId,
+      isDeleted: { $ne: true },
     }).lean();
 
     if (!blockSeat) {
@@ -286,6 +350,7 @@ export const searchBlockSeatsByRoute = async (
     const searchQuery: any = {
       status: "Available",
       "route.tripType": tripType,
+      isDeleted: { $ne: true },
     };
 
     // Search for exact route match
@@ -348,6 +413,7 @@ export const getAvailableDestinations = async (
     const searchQuery: any = {
       status: "Available",
       "route.from.iataCode": fromIata.toUpperCase(),
+      isDeleted: { $ne: true },
     };
 
     // Filter by trip type if provided
@@ -438,6 +504,7 @@ export const getAvailableDatesForRoute = async (
       "route.from.iataCode": fromIata.toUpperCase(),
       "route.to.iataCode": toIata.toUpperCase(),
       "route.tripType": tripType,
+      isDeleted: { $ne: true },
     };
 
     // Filter by wholesaler if provided
@@ -493,6 +560,277 @@ export const getAvailableDatesForRoute = async (
     throw new AppError(
       httpStatus.INTERNAL_SERVER_ERROR,
       error instanceof Error ? error.message : "Failed to get available dates"
+    );
+  }
+};
+
+// ==================== UPDATE BLOCK SEAT ====================
+export const updateBlockSeat = async (
+  blockSeatId: string,
+  wholesalerId: string,
+  request: UpdateBlockSeatRequest
+): Promise<{ success: boolean; blockSeat: any }> => {
+  try {
+    // Find the block seat and verify ownership
+    const blockSeat = await BlockSeat.findOne({
+      _id: blockSeatId,
+      wholesaler: wholesalerId,
+      isDeleted: { $ne: true },
+    });
+
+    if (!blockSeat) {
+      throw new AppError(httpStatus.NOT_FOUND, "Block seat not found");
+    }
+
+    // Update only fields that are provided (partial update)
+    if (request.name !== undefined) {
+      blockSeat.name = request.name;
+    }
+
+    if (request.airline) {
+      blockSeat.airline = request.airline;
+    }
+
+    if (request.route) {
+      blockSeat.route = request.route;
+    }
+
+    // Handle date removal first
+    if (request.removeDates) {
+      const tripType = request.route?.tripType || blockSeat.route.tripType;
+
+      request.removeDates.forEach((dateToRemove) => {
+        const dateIndex = blockSeat.availableDates.findIndex(
+          (existingDate: any) => {
+            if (tripType === "ROUND_TRIP") {
+              return (
+                existingDate.departureDate === dateToRemove.departureDate &&
+                existingDate.returnDate === dateToRemove.returnDate
+              );
+            } else {
+              return existingDate.departureDate === dateToRemove.departureDate;
+            }
+          }
+        );
+
+        if (dateIndex >= 0) {
+          blockSeat.availableDates.splice(dateIndex, 1);
+        }
+      });
+    }
+
+    if (request.availableDates) {
+      // Validate dates based on trip type
+      const tripType = request.route?.tripType || blockSeat.route.tripType;
+      if (tripType === "ROUND_TRIP") {
+        for (const dateObj of request.availableDates) {
+          if (!dateObj.returnDate) {
+            throw new AppError(
+              httpStatus.BAD_REQUEST,
+              "Return date is required for ROUND_TRIP bookings"
+            );
+          }
+        }
+      }
+
+      // Merge dates: Add new dates or update existing ones
+      request.availableDates.forEach((newDate) => {
+        const existingDateIndex = blockSeat.availableDates.findIndex(
+          (existingDate: any) => {
+            if (tripType === "ROUND_TRIP") {
+              return (
+                existingDate.departureDate === newDate.departureDate &&
+                existingDate.returnDate === newDate.returnDate
+              );
+            } else {
+              return existingDate.departureDate === newDate.departureDate;
+            }
+          }
+        );
+
+        if (existingDateIndex >= 0) {
+          // Update existing date
+          blockSeat.availableDates[existingDateIndex] = newDate;
+        } else {
+          // Add new date
+          blockSeat.availableDates.push(newDate);
+        }
+      });
+    }
+
+    if (request.classes) {
+      // Merge classes: Update existing by classId, add new ones
+      request.classes.forEach((classItem) => {
+        const existingClassIndex = blockSeat.classes.findIndex(
+          (c: any) => c.classId === classItem.classId
+        );
+
+        if (existingClassIndex >= 0) {
+          // Update existing class
+          const existingClass = blockSeat.classes[existingClassIndex];
+          blockSeat.classes[existingClassIndex] = {
+            classId: classItem.classId,
+            className:
+              classItem.className ||
+              existingClass.className ||
+              `Class ${classItem.classId}`,
+            totalSeats: classItem.totalSeats,
+            bookedSeats: existingClass.bookedSeats, // Preserve booked seats
+            availableSeats: classItem.totalSeats - existingClass.bookedSeats,
+            price: classItem.price,
+            currency: request.currency || blockSeat.currency,
+          };
+        } else {
+          // Add new class
+          blockSeat.classes.push({
+            classId: classItem.classId,
+            className: classItem.className || `Class ${classItem.classId}`,
+            totalSeats: classItem.totalSeats,
+            bookedSeats: 0,
+            availableSeats: classItem.totalSeats,
+            price: classItem.price,
+            currency: request.currency || blockSeat.currency,
+          });
+        }
+      });
+    }
+
+    if (request.currency) {
+      blockSeat.currency = request.currency;
+    }
+
+    if (request.status) {
+      blockSeat.status = request.status;
+    }
+
+    if (request.fareRules) {
+      blockSeat.fareRules = {
+        template:
+          request.fareRules.template ||
+          blockSeat.fareRules?.template ||
+          "MANUAL_ENTRY",
+        refundable:
+          request.fareRules.refundable !== undefined
+            ? request.fareRules.refundable
+            : blockSeat.fareRules?.refundable ?? false,
+        changeFee:
+          request.fareRules.changeFee !== undefined
+            ? request.fareRules.changeFee
+            : blockSeat.fareRules?.changeFee ?? 0,
+        cancellationFee:
+          request.fareRules.cancellationFee !== undefined
+            ? request.fareRules.cancellationFee
+            : blockSeat.fareRules?.cancellationFee ?? 0,
+      };
+    }
+
+    if (request.baggageAllowance) {
+      blockSeat.baggageAllowance = {
+        checkedBags:
+          request.baggageAllowance.checkedBags !== undefined
+            ? request.baggageAllowance.checkedBags
+            : blockSeat.baggageAllowance?.checkedBags ?? 0,
+        weightPerBag:
+          request.baggageAllowance.weightPerBag ||
+          blockSeat.baggageAllowance?.weightPerBag ||
+          "0kg",
+        carryOnWeight:
+          request.baggageAllowance.carryOnWeight ||
+          blockSeat.baggageAllowance?.carryOnWeight ||
+          "0kg",
+      };
+    }
+
+    if (request.commission) {
+      blockSeat.commission = {
+        supplierCommission: {
+          type:
+            request.commission.supplierCommission?.type ||
+            blockSeat.commission?.supplierCommission?.type ||
+            "FIXED_AMOUNT",
+          value:
+            request.commission.supplierCommission?.value !== undefined
+              ? request.commission.supplierCommission.value
+              : blockSeat.commission?.supplierCommission?.value ?? 0,
+        },
+        agencyCommission: {
+          type:
+            request.commission.agencyCommission?.type ||
+            blockSeat.commission?.agencyCommission?.type ||
+            "FIXED_AMOUNT",
+          value:
+            request.commission.agencyCommission?.value !== undefined
+              ? request.commission.agencyCommission.value
+              : blockSeat.commission?.agencyCommission?.value ?? 0,
+        },
+      };
+    }
+
+    if (request.remarks !== undefined) {
+      blockSeat.remarks = request.remarks;
+    }
+
+    if (request.autoRelease !== undefined) {
+      blockSeat.autoRelease = request.autoRelease;
+    }
+
+    if (request.releaseDate !== undefined) {
+      blockSeat.releaseDate = request.releaseDate;
+    }
+
+    blockSeat.updatedAt = new Date();
+
+    // Save the updated block seat
+    await blockSeat.save();
+
+    return {
+      success: true,
+      blockSeat: blockSeat.toObject(),
+    };
+  } catch (error) {
+    if (error instanceof AppError) {
+      throw error;
+    }
+    throw new AppError(
+      httpStatus.INTERNAL_SERVER_ERROR,
+      error instanceof Error ? error.message : "Failed to update block seat"
+    );
+  }
+};
+
+// ==================== SOFT DELETE BLOCK SEAT ====================
+export const softDeleteBlockSeat = async (
+  blockSeatId: string,
+  wholesalerId: string
+): Promise<{ success: boolean; message: string }> => {
+  try {
+    // Find the block seat and verify ownership
+    const blockSeat = await BlockSeat.findOne({
+      _id: blockSeatId,
+      wholesaler: wholesalerId,
+      isDeleted: { $ne: true },
+    });
+
+    if (!blockSeat) {
+      throw new AppError(httpStatus.NOT_FOUND, "Block seat not found");
+    }
+
+    // Soft delete by setting isDeleted to true
+    blockSeat.isDeleted = true;
+    blockSeat.updatedAt = new Date();
+    await blockSeat.save();
+
+    return {
+      success: true,
+      message: "Block seat deleted successfully",
+    };
+  } catch (error) {
+    if (error instanceof AppError) {
+      throw error;
+    }
+    throw new AppError(
+      httpStatus.INTERNAL_SERVER_ERROR,
+      error instanceof Error ? error.message : "Failed to delete block seat"
     );
   }
 };

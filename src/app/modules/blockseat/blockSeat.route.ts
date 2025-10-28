@@ -75,6 +75,31 @@ router.get("/destinations", BlockSeatController.getAvailableDestinations);
 router.get("/dates", BlockSeatController.getAvailableDates);
 
 /**
+ * @route   PUT /api/v1/block-seats/:id
+ * @desc    Update an existing block seat
+ * @access  Private (Wholesaler)
+ * @params  id: string (blockSeatId)
+ * @body    All fields can be updated (same as POST /api/v1/block-seats)
+ */
+router.put(
+  "/:id",
+  authWithUserStatus(USER_ROLE.whole_saler, USER_ROLE.MODERATOR),
+  BlockSeatController.updateBlockSeat
+);
+
+/**
+ * @route   DELETE /api/v1/block-seats/:id
+ * @desc    Soft delete a block seat (set isDeleted to true)
+ * @access  Private (Wholesaler)
+ * @params  id: string (blockSeatId)
+ */
+router.delete(
+  "/:id",
+  authWithUserStatus(USER_ROLE.whole_saler, USER_ROLE.MODERATOR),
+  BlockSeatController.deleteBlockSeat
+);
+
+/**
  * @route   GET /api/v1/block-seats/:id
  * @desc    Get specific block seat by ID for authenticated wholesaler
  * @access  Private (Wholesaler)

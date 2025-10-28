@@ -9,7 +9,10 @@ import {
   searchBlockSeatsByRoute,
   getAvailableDestinations,
   getAvailableDatesForRoute,
+  updateBlockSeat,
+  softDeleteBlockSeat,
   CreateBlockSeatRequest,
+  UpdateBlockSeatRequest,
 } from "./blockSeat.service";
 
 /**
@@ -366,6 +369,243 @@ const getAvailableDatesController = catchAsync(
   }
 );
 
+/**
+ * Update block seat - Update an existing block seat (partial update supported)
+ * PUT /api/v1/block-seats/:id
+ */
+const updateBlockSeatController = catchAsync(
+  async (req: any, res: Response) => {
+    // Extract wholesaler ID from authenticated user
+    const wholesalerId = req.user?.wholesalerId;
+
+    if (!wholesalerId) {
+      return sendResponse(res, {
+        statusCode: httpStatus.UNAUTHORIZED,
+        success: false,
+        message: "Wholesaler authentication required",
+        data: null,
+      });
+    }
+
+    const { id } = req.params;
+
+    if (!id) {
+      return sendResponse(res, {
+        statusCode: httpStatus.BAD_REQUEST,
+        success: false,
+        message: "Block seat ID is required",
+        data: null,
+      });
+    }
+
+    // Validate only fields that are being updated
+    const {
+      name,
+      airline,
+      route,
+      availableDates,
+      removeDates,
+      classes,
+      currency,
+      status,
+      fareRules,
+      baggageAllowance,
+      commission,
+      remarks,
+      autoRelease,
+      releaseDate,
+    } = req.body;
+
+    // If airline is being updated, validate it
+    if (airline !== undefined && (!airline.code || !airline.name)) {
+      return sendResponse(res, {
+        statusCode: httpStatus.BAD_REQUEST,
+        success: false,
+        message: "Airline code and name are required when updating airline",
+        data: null,
+      });
+    }
+
+    // If route is being updated, validate it
+    if (route !== undefined && (!route.from || !route.to || !route.tripType)) {
+      return sendResponse(res, {
+        statusCode: httpStatus.BAD_REQUEST,
+        success: false,
+        message: "Route information must include from, to, and tripType",
+        data: null,
+      });
+    }
+
+    // If availableDates is being updated, validate them
+    if (availableDates !== undefined) {
+      if (!Array.isArray(availableDates) || availableDates.length === 0) {
+        return sendResponse(res, {
+          statusCode: httpStatus.BAD_REQUEST,
+          success: false,
+          message: "At least one available date is required",
+          data: null,
+        });
+      }
+
+      // Validate date structure
+      const tripType = route?.tripType || req.body.existingTripType;
+      for (const dateObj of availableDates) {
+        if (!dateObj.departureDate) {
+          return sendResponse(res, {
+            statusCode: httpStatus.BAD_REQUEST,
+            success: false,
+            message: "Each date must have a departureDate",
+            data: null,
+          });
+        }
+
+        // Validate return date for ROUND_TRIP
+        if (tripType === "ROUND_TRIP" && !dateObj.returnDate) {
+          return sendResponse(res, {
+            statusCode: httpStatus.BAD_REQUEST,
+            success: false,
+            message: "Return date is required for ROUND_TRIP bookings",
+            data: null,
+          });
+        }
+      }
+    }
+
+    // If removeDates is provided, validate them
+    if (removeDates !== undefined) {
+      if (!Array.isArray(removeDates)) {
+        return sendResponse(res, {
+          statusCode: httpStatus.BAD_REQUEST,
+          success: false,
+          message: "removeDates must be an array",
+          data: null,
+        });
+      }
+
+      // Validate date structure for removal
+      const tripType = route?.tripType || req.body.existingTripType;
+      for (const dateObj of removeDates) {
+        if (!dateObj.departureDate) {
+          return sendResponse(res, {
+            statusCode: httpStatus.BAD_REQUEST,
+            success: false,
+            message: "Each date to remove must have a departureDate",
+            data: null,
+          });
+        }
+
+        // Validate return date for ROUND_TRIP
+        if (tripType === "ROUND_TRIP" && !dateObj.returnDate) {
+          return sendResponse(res, {
+            statusCode: httpStatus.BAD_REQUEST,
+            success: false,
+            message:
+              "Return date is required for ROUND_TRIP bookings in removeDates",
+            data: null,
+          });
+        }
+      }
+    }
+
+    // If classes is being updated, validate them
+    if (classes !== undefined) {
+      if (!Array.isArray(classes) || classes.length === 0) {
+        return sendResponse(res, {
+          statusCode: httpStatus.BAD_REQUEST,
+          success: false,
+          message: "At least one class is required",
+          data: null,
+        });
+      }
+
+      // Validate each class
+      for (const classItem of classes) {
+        if (
+          !classItem.classId ||
+          !classItem.totalSeats ||
+          classItem.price === undefined
+        ) {
+          return sendResponse(res, {
+            statusCode: httpStatus.BAD_REQUEST,
+            success: false,
+            message: "Each class must have classId, totalSeats, and price",
+            data: null,
+          });
+        }
+      }
+    }
+
+    // Prepare request object with only provided fields
+    const blockSeatRequest: UpdateBlockSeatRequest = {
+      name,
+      airline,
+      route,
+      availableDates,
+      removeDates,
+      classes,
+      currency,
+      status,
+      fareRules,
+      baggageAllowance,
+      commission,
+      remarks,
+      autoRelease,
+      releaseDate,
+    };
+
+    // Update block seat
+    const result = await updateBlockSeat(id, wholesalerId, blockSeatRequest);
+
+    return sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Block seat updated successfully!",
+      data: result.blockSeat,
+    });
+  }
+);
+
+/**
+ * Delete block seat - Soft delete a block seat (set isDeleted to true)
+ * DELETE /api/v1/block-seats/:id
+ */
+const deleteBlockSeatController = catchAsync(
+  async (req: any, res: Response) => {
+    // Extract wholesaler ID from authenticated user
+    const wholesalerId = req.user?.wholesalerId;
+
+    if (!wholesalerId) {
+      return sendResponse(res, {
+        statusCode: httpStatus.UNAUTHORIZED,
+        success: false,
+        message: "Wholesaler authentication required",
+        data: null,
+      });
+    }
+
+    const { id } = req.params;
+
+    if (!id) {
+      return sendResponse(res, {
+        statusCode: httpStatus.BAD_REQUEST,
+        success: false,
+        message: "Block seat ID is required",
+        data: null,
+      });
+    }
+
+    // Soft delete block seat
+    const result = await softDeleteBlockSeat(id, wholesalerId);
+
+    return sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: result.message,
+      data: null,
+    });
+  }
+);
+
 export const BlockSeatController = {
   createBlockSeat: createBlockSeatController,
   getBlockSeats: getBlockSeatsController,
@@ -373,4 +613,6 @@ export const BlockSeatController = {
   searchBlockSeatsByRoute: searchBlockSeatsByRouteController,
   getAvailableDestinations: getAvailableDestinationsController,
   getAvailableDates: getAvailableDatesController,
+  updateBlockSeat: updateBlockSeatController,
+  deleteBlockSeat: deleteBlockSeatController,
 };

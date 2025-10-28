@@ -163,6 +163,7 @@ export interface IBlockSeat extends Document {
   remarks?: string;
   autoRelease: boolean;
   releaseDate?: Date;
+  isDeleted?: boolean;
   createdAt: Date;
   updatedAt: Date;
   hasAvailableSeats(
@@ -236,6 +237,7 @@ const BlockSeatSchema = new Schema(
     remarks: { type: String },
     autoRelease: { type: Boolean, default: false }, // Auto-release unsold seats
     releaseDate: { type: Date }, // When to release unsold seats
+    isDeleted: { type: Boolean, default: false },
 
     // ==================== TIMESTAMPS ====================
     createdAt: { type: Date, default: Date.now },
