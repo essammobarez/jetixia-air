@@ -2,6 +2,7 @@ import { Router } from "express";
 import { BlockSeatController } from "./blockSeat.controller";
 import authWithUserStatus from "../../middlewares/auth";
 import { USER_ROLE } from "../user/user.constant";
+import { BlockSeatBookingRoutes } from "./booking/booking.route";
 
 const router = Router();
 
@@ -73,6 +74,9 @@ router.get("/destinations", BlockSeatController.getAvailableDestinations);
  * @example /api/v1/block-seats/dates?fromIata=DXB&toIata=LHR&tripType=ONE_WAY
  */
 router.get("/dates", BlockSeatController.getAvailableDates);
+
+// ==================== BLOCK SEAT BOOKINGS ====================
+router.use("/bookings", BlockSeatBookingRoutes);
 
 /**
  * @route   PUT /api/v1/block-seats/:id
