@@ -7,7 +7,7 @@ import { BlockSeatBooking, IBlockSeatBooking } from "./booking.model";
 export interface CreateBookingRequest {
   reference?: string;
   blockSeatId: string;
-  agencyId: string;
+  agencyId?: string; // Optional - can be extracted from req.user
   classId: number;
   trip: {
     tripType: "ONE_WAY" | "ROUND_TRIP";
@@ -197,6 +197,51 @@ export const getBookingById = async (id: string) => {
     throw new AppError(httpStatus.NOT_FOUND, "Booking not found");
   }
   return booking;
+};
+
+export const getBookingsByWholesaler = async (
+  wholesalerId: string,
+  page = 1,
+  limit = 10,
+  status?: "PENDING" | "CONFIRMED" | "CANCELLED"
+) => {
+  try {
+    const skip = (page - 1) * limit;
+
+    const query: any = { wholesaler: wholesalerId };
+    if (status) {
+      query.status = status;
+    }
+
+    const [bookings, total] = await Promise.all([
+      BlockSeatBooking.find(query)
+        .populate({
+          path: "blockSeat",
+          select: "name airline route currency classes",
+        })
+        .populate({ path: "agency", select: "name email phone" })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      BlockSeatBooking.countDocuments(query),
+    ]);
+
+    return {
+      bookings,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  } catch (error) {
+    throw new AppError(
+      httpStatus.INTERNAL_SERVER_ERROR,
+      error instanceof Error ? error.message : "Failed to retrieve bookings"
+    );
+  }
 };
 
 export const updateBookingStatus = async (
