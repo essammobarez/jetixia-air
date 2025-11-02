@@ -4,16 +4,16 @@ import AppError from "../../../errors/AppError";
 import { BlockSeat } from "../blockSeat.model";
 import { BlockSeatBooking, IBlockSeatBooking } from "./booking.model";
 
+// Import models to ensure they're registered for populate
+import "../../agency/agency.model";
+import "../../wholesaler/wholesaler.model";
+
 export interface CreateBookingRequest {
   reference?: string;
   blockSeatId: string;
   agencyId?: string; // Optional - can be extracted from req.user
-  classId: number;
-  trip: {
-    tripType: "ONE_WAY" | "ROUND_TRIP";
-    departureDate: string;
-    returnDate?: string;
-  };
+  departureDate: string; // YYYY-MM-DD
+  returnDate?: string; // YYYY-MM-DD (required if block seat is ROUND_TRIP)
   passengers: Array<{
     paxType: "ADT" | "CHD" | "INF";
     title: string;
@@ -90,14 +90,16 @@ export const createBooking = async (
       );
     }
 
+    // Get trip type from block seat
+    const tripType = blockSeat.route.tripType;
+
     // Validate date availability
-    const tripType = payload.trip.tripType;
     const dateExists = blockSeat.availableDates.some((d: any) => {
       if (tripType === "ONE_WAY")
-        return d.departureDate === payload.trip.departureDate;
+        return d.departureDate === payload.departureDate;
       return (
-        d.departureDate === payload.trip.departureDate &&
-        d.returnDate === payload.trip.returnDate
+        d.departureDate === payload.departureDate &&
+        d.returnDate === payload.returnDate
       );
     });
     if (!dateExists) {
@@ -107,28 +109,36 @@ export const createBooking = async (
       );
     }
 
-    // Find class and ensure enough seats
-    const cls = blockSeat.classes.find(
-      (c: any) => c.classId === payload.classId
+    // Validate return date for ROUND_TRIP
+    if (tripType === "ROUND_TRIP" && !payload.returnDate) {
+      throw new AppError(
+        httpStatus.BAD_REQUEST,
+        "Return date is required for ROUND_TRIP bookings"
+      );
+    }
+
+    // Auto-select first available class with enough seats (starting from classId 1)
+    const sortedClasses = [...blockSeat.classes].sort(
+      (a: any, b: any) => a.classId - b.classId
     );
-    if (!cls) {
+    const availableClass = sortedClasses.find(
+      (c: any) => c.availableSeats >= quantity
+    );
+
+    if (!availableClass) {
       throw new AppError(
         httpStatus.BAD_REQUEST,
-        "Selected class is not available"
+        "No available class with sufficient seats"
       );
     }
-    if (cls.availableSeats < quantity) {
-      throw new AppError(
-        httpStatus.BAD_REQUEST,
-        "Insufficient available seats for selected class"
-      );
-    }
+
+    const selectedClassId = availableClass.classId;
 
     // Atomic update: deduct seats with arrayFilters
     const updateRes = await BlockSeat.updateOne(
       {
         _id: blockSeat._id,
-        "classes.classId": payload.classId,
+        "classes.classId": selectedClassId,
         isDeleted: { $ne: true },
       },
       {
@@ -137,7 +147,7 @@ export const createBooking = async (
           "classes.$[ci].bookedSeats": quantity,
         },
       },
-      { arrayFilters: [{ "ci.classId": payload.classId }], session }
+      { arrayFilters: [{ "ci.classId": selectedClassId }], session }
     );
 
     if (updateRes.modifiedCount !== 1) {
@@ -154,15 +164,19 @@ export const createBooking = async (
           blockSeat: blockSeat._id,
           agency: payload.agencyId,
           wholesaler: (blockSeat as any).wholesaler,
-          classId: payload.classId,
-          trip: payload.trip,
+          classId: selectedClassId,
+          trip: {
+            tripType: tripType,
+            departureDate: payload.departureDate,
+            returnDate: payload.returnDate,
+          },
           passengers: payload.passengers,
           contact: payload.contact,
           quantity,
           priceSnapshot: {
             currency: blockSeat.currency,
-            unitPrice: cls.price,
-            totalAmount: cls.price * quantity,
+            unitPrice: availableClass.price,
+            totalAmount: availableClass.price * quantity,
             commissions: blockSeat.commission,
           },
           status: "CONFIRMED",
@@ -170,7 +184,7 @@ export const createBooking = async (
           audit: [
             {
               at: new Date(),
-              by: userId ? new mongoose.Types.ObjectId(userId) : undefined,
+              by: userId as any,
               action: "BOOK",
             },
           ],
@@ -283,7 +297,7 @@ export const updateBookingStatus = async (
     booking.audit = booking.audit || [];
     booking.audit.push({
       at: new Date(),
-      by: userId ? new mongoose.Types.ObjectId(userId) : undefined,
+      by: userId as any,
       action: `STATUS_${status}`,
     });
     await booking.save({ session });
