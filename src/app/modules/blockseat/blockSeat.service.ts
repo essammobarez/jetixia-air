@@ -389,6 +389,81 @@ export const searchBlockSeatsByRoute = async (
   }
 };
 
+// ==================== GET ALL AVAILABLE ORIGINS ====================
+export const getAllAvailableOrigins = async (
+  tripType?: "ONE_WAY" | "ROUND_TRIP",
+  search?: string
+): Promise<{
+  origins: Array<{
+    country: string;
+    iataCode: string;
+    blockSeatCount: number;
+  }>;
+}> => {
+  try {
+    // Build search query
+    const searchQuery: any = {
+      status: "Available",
+      isDeleted: { $ne: true },
+    };
+
+    // Filter by trip type if provided
+    if (tripType) {
+      searchQuery["route.tripType"] = tripType;
+    }
+
+    // Add search filter for country or IATA code (case-insensitive)
+    if (search) {
+      const searchRegex = new RegExp(search, "i");
+      searchQuery.$or = [
+        { "route.from.country": searchRegex },
+        { "route.from.iataCode": searchRegex },
+      ];
+    }
+
+    // Get all matching block seats
+    const blockSeats = await BlockSeat.find(searchQuery).lean();
+
+    if (!blockSeats || blockSeats.length === 0) {
+      return {
+        origins: [],
+      };
+    }
+
+    // Group by origin airport
+    const originMap = new Map<string, any>();
+
+    blockSeats.forEach((blockSeat: any) => {
+      const fromIata = blockSeat.route.from.iataCode;
+      const key = fromIata;
+
+      if (!originMap.has(key)) {
+        originMap.set(key, {
+          country: blockSeat.route.from.country,
+          iataCode: fromIata,
+          blockSeatCount: 1,
+        });
+      } else {
+        const existing = originMap.get(key);
+        existing.blockSeatCount += 1;
+      }
+    });
+
+    const origins = Array.from(originMap.values()).sort((a, b) =>
+      a.iataCode.localeCompare(b.iataCode)
+    );
+
+    return {
+      origins,
+    };
+  } catch (error) {
+    throw new AppError(
+      httpStatus.INTERNAL_SERVER_ERROR,
+      error instanceof Error ? error.message : "Failed to get available origins"
+    );
+  }
+};
+
 // ==================== GET AVAILABLE DESTINATIONS BY ORIGIN ====================
 export const getAvailableDestinations = async (
   fromIata: string,
