@@ -7,6 +7,7 @@ import {
   getBlockSeatsByWholesaler,
   getBlockSeatById,
   searchBlockSeatsByRoute,
+  getAllAvailableOrigins,
   getAvailableDestinations,
   getAvailableDatesForRoute,
   updateBlockSeat,
@@ -290,6 +291,27 @@ const searchBlockSeatsByRouteController = catchAsync(
     });
   }
 );
+
+/**
+ * Get all available origins (FROM airports)
+ * GET /api/v1/block-seats/origins
+ */
+const getAllOriginsController = catchAsync(async (req: any, res: Response) => {
+  const { tripType, search } = req.query;
+
+  // Get all available origins
+  const result = await getAllAvailableOrigins(
+    tripType as "ONE_WAY" | "ROUND_TRIP" | undefined,
+    search as string | undefined
+  );
+
+  return sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Available origins retrieved successfully",
+    data: result,
+  });
+});
 
 /**
  * Get available destinations by origin airport
@@ -611,6 +633,7 @@ export const BlockSeatController = {
   getBlockSeats: getBlockSeatsController,
   getBlockSeatById: getBlockSeatByIdController,
   searchBlockSeatsByRoute: searchBlockSeatsByRouteController,
+  getAllOrigins: getAllOriginsController,
   getAvailableDestinations: getAvailableDestinationsController,
   getAvailableDates: getAvailableDatesController,
   updateBlockSeat: updateBlockSeatController,

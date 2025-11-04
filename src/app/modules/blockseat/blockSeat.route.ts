@@ -70,8 +70,18 @@ router.get(
 );
 
 /**
+ * @route   GET /api/v1/block-seats/origins
+ * @desc    Get all available origin airports (FROM list) with optional search
+ * @access  Public
+ * @query   tripType?: "ONE_WAY" | "ROUND_TRIP" (optional), search?: string (optional - filters by country or IATA code)
+ * @example /api/v1/block-seats/origins?search=UA
+ * @example /api/v1/block-seats/origins?search=Dubai&tripType=ONE_WAY
+ */
+router.get("/origins", BlockSeatController.getAllOrigins);
+
+/**
  * @route   GET /api/v1/block-seats/destinations
- * @desc    Get all available destinations from a specific origin airport
+ * @desc    Get all available destinations from a specific origin airport (TO list based on FROM)
  * @access  Public
  * @query   fromIata: string (required), tripType?: "ONE_WAY" | "ROUND_TRIP" (optional), wholesalerId?: string (optional)
  * @example /api/v1/block-seats/destinations?fromIata=DXB&tripType=ONE_WAY
