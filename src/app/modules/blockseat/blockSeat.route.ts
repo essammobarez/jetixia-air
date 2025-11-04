@@ -6,6 +6,9 @@ import { BlockSeatBookingRoutes } from "./booking/booking.route";
 
 const router = Router();
 
+// ==================== PUBLIC SEARCH ROUTES (NO AUTH) ====================
+// These routes MUST remain public for flight search functionality
+
 // ==================== BLOCK SEAT ROUTES ====================
 
 /**
@@ -71,31 +74,55 @@ router.get(
 
 /**
  * @route   GET /api/v1/block-seats/origins
- * @desc    Get all available origin airports (FROM list) with optional search
- * @access  Public
+ * @desc    Get all available origin airports (FROM list) with optional search - filtered by wholesaler
+ * @access  Private (Requires authentication)
  * @query   tripType?: "ONE_WAY" | "ROUND_TRIP" (optional), search?: string (optional - filters by country or IATA code)
  * @example /api/v1/block-seats/origins?search=UA
  * @example /api/v1/block-seats/origins?search=Dubai&tripType=ONE_WAY
  */
-router.get("/origins", BlockSeatController.getAllOrigins);
+router.get(
+  "/origins",
+  authWithUserStatus(
+    USER_ROLE.whole_saler,
+    USER_ROLE.MODERATOR,
+    USER_ROLE.agency_admin
+  ),
+  BlockSeatController.getAllOrigins
+);
 
 /**
  * @route   GET /api/v1/block-seats/destinations
- * @desc    Get all available destinations from a specific origin airport (TO list based on FROM)
- * @access  Public
- * @query   fromIata: string (required), tripType?: "ONE_WAY" | "ROUND_TRIP" (optional), wholesalerId?: string (optional)
+ * @desc    Get all available destinations from a specific origin airport (TO list based on FROM) - filtered by wholesaler
+ * @access  Private (Requires authentication)
+ * @query   fromIata: string (required), tripType?: "ONE_WAY" | "ROUND_TRIP" (optional)
  * @example /api/v1/block-seats/destinations?fromIata=DXB&tripType=ONE_WAY
  */
-router.get("/destinations", BlockSeatController.getAvailableDestinations);
+router.get(
+  "/destinations",
+  authWithUserStatus(
+    USER_ROLE.whole_saler,
+    USER_ROLE.MODERATOR,
+    USER_ROLE.agency_admin
+  ),
+  BlockSeatController.getAvailableDestinations
+);
 
 /**
  * @route   GET /api/v1/block-seats/dates
- * @desc    Get available dates for a specific route
- * @access  Public
- * @query   fromIata: string (required), toIata: string (required), tripType: "ONE_WAY" | "ROUND_TRIP" (required), wholesalerId?: string (optional)
+ * @desc    Get available dates for a specific route - filtered by wholesaler
+ * @access  Private (Requires authentication)
+ * @query   fromIata: string (required), toIata: string (required), tripType: "ONE_WAY" | "ROUND_TRIP" (required)
  * @example /api/v1/block-seats/dates?fromIata=DXB&toIata=LHR&tripType=ONE_WAY
  */
-router.get("/dates", BlockSeatController.getAvailableDates);
+router.get(
+  "/dates",
+  authWithUserStatus(
+    USER_ROLE.whole_saler,
+    USER_ROLE.MODERATOR,
+    USER_ROLE.agency_admin
+  ),
+  BlockSeatController.getAvailableDates
+);
 
 // ==================== BLOCK SEAT BOOKINGS ====================
 router.use("/bookings", BlockSeatBookingRoutes);
