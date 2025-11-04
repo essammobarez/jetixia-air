@@ -391,6 +391,7 @@ export const searchBlockSeatsByRoute = async (
 
 // ==================== GET ALL AVAILABLE ORIGINS ====================
 export const getAllAvailableOrigins = async (
+  wholesalerId: string,
   tripType?: "ONE_WAY" | "ROUND_TRIP",
   search?: string
 ): Promise<{
@@ -401,10 +402,11 @@ export const getAllAvailableOrigins = async (
   }>;
 }> => {
   try {
-    // Build search query
+    // Build search query - FILTER BY WHOLESALER
     const searchQuery: any = {
       status: "Available",
       isDeleted: { $ne: true },
+      wholesaler: wholesalerId, // Only show this wholesaler's block seats
     };
 
     // Filter by trip type if provided

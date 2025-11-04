@@ -8,7 +8,7 @@ import config from "../config";
 import { User } from "../modules/user/user.model";
 import Subuser from "../modules/subuser/subuser.model";
 import { Subadmin } from "../modules/SubAdmin/subAdmin.model";
-import { ISubadmin } from "../modules/SubAdmin/subAdmin.interface";
+// import { ISubadmin } from "../modules/SubAdmin/subAdmin.interface";
 // import { SubAgent } from "../modules/sub-agency/subAgency.model";
 
 const authWithUserStatus =

@@ -299,8 +299,21 @@ const searchBlockSeatsByRouteController = catchAsync(
 const getAllOriginsController = catchAsync(async (req: any, res: Response) => {
   const { tripType, search } = req.query;
 
-  // Get all available origins
+  // Extract wholesaler ID from authenticated user
+  const wholesalerId = req.user?.wholesalerId;
+
+  if (!wholesalerId) {
+    return sendResponse(res, {
+      statusCode: httpStatus.UNAUTHORIZED,
+      success: false,
+      message: "Wholesaler authentication required",
+      data: null,
+    });
+  }
+
+  // Get all available origins for this wholesaler
   const result = await getAllAvailableOrigins(
+    wholesalerId,
     tripType as "ONE_WAY" | "ROUND_TRIP" | undefined,
     search as string | undefined
   );
@@ -319,7 +332,7 @@ const getAllOriginsController = catchAsync(async (req: any, res: Response) => {
  */
 const getAvailableDestinationsController = catchAsync(
   async (req: any, res: Response) => {
-    const { fromIata, tripType, wholesalerId } = req.query;
+    const { fromIata, tripType } = req.query;
 
     // Validate required parameters
     if (!fromIata) {
@@ -331,7 +344,19 @@ const getAvailableDestinationsController = catchAsync(
       });
     }
 
-    // Get available destinations
+    // Extract wholesaler ID from authenticated user
+    const wholesalerId = req.user?.wholesalerId;
+
+    if (!wholesalerId) {
+      return sendResponse(res, {
+        statusCode: httpStatus.UNAUTHORIZED,
+        success: false,
+        message: "Wholesaler authentication required",
+        data: null,
+      });
+    }
+
+    // Get available destinations for this wholesaler
     const result = await getAvailableDestinations(
       fromIata,
       tripType as "ONE_WAY" | "ROUND_TRIP" | undefined,
@@ -353,7 +378,7 @@ const getAvailableDestinationsController = catchAsync(
  */
 const getAvailableDatesController = catchAsync(
   async (req: any, res: Response) => {
-    const { fromIata, toIata, tripType, wholesalerId } = req.query;
+    const { fromIata, toIata, tripType } = req.query;
 
     // Validate required parameters
     if (!fromIata || !toIata) {
@@ -374,7 +399,19 @@ const getAvailableDatesController = catchAsync(
       });
     }
 
-    // Get available dates for route
+    // Extract wholesaler ID from authenticated user
+    const wholesalerId = req.user?.wholesalerId;
+
+    if (!wholesalerId) {
+      return sendResponse(res, {
+        statusCode: httpStatus.UNAUTHORIZED,
+        success: false,
+        message: "Wholesaler authentication required",
+        data: null,
+      });
+    }
+
+    // Get available dates for route for this wholesaler
     const result = await getAvailableDatesForRoute(
       fromIata,
       toIata,
