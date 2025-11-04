@@ -28,7 +28,11 @@ const router = Router();
  */
 router.post(
   "/",
-  authWithUserStatus(USER_ROLE.whole_saler, USER_ROLE.MODERATOR),
+  authWithUserStatus(
+    USER_ROLE.whole_saler,
+    USER_ROLE.agency_admin,
+    USER_ROLE.MODERATOR
+  ),
   BlockSeatController.createBlockSeat
 );
 
@@ -40,7 +44,11 @@ router.post(
  */
 router.get(
   "/",
-  authWithUserStatus(USER_ROLE.whole_saler, USER_ROLE.MODERATOR),
+  authWithUserStatus(
+    USER_ROLE.whole_saler,
+    USER_ROLE.agency_admin,
+    USER_ROLE.MODERATOR
+  ),
   BlockSeatController.getBlockSeats
 );
 
@@ -53,7 +61,11 @@ router.get(
  */
 router.get(
   "/search/route",
-  authWithUserStatus(USER_ROLE.whole_saler, USER_ROLE.MODERATOR),
+  authWithUserStatus(
+    USER_ROLE.whole_saler,
+    USER_ROLE.agency_admin,
+    USER_ROLE.MODERATOR
+  ),
   BlockSeatController.searchBlockSeatsByRoute
 );
 
@@ -87,7 +99,11 @@ router.use("/bookings", BlockSeatBookingRoutes);
  */
 router.put(
   "/:id",
-  authWithUserStatus(USER_ROLE.whole_saler, USER_ROLE.MODERATOR),
+  authWithUserStatus(
+    USER_ROLE.whole_saler,
+    USER_ROLE.agency_admin,
+    USER_ROLE.MODERATOR
+  ),
   BlockSeatController.updateBlockSeat
 );
 
@@ -99,7 +115,11 @@ router.put(
  */
 router.delete(
   "/:id",
-  authWithUserStatus(USER_ROLE.whole_saler, USER_ROLE.MODERATOR),
+  authWithUserStatus(
+    USER_ROLE.whole_saler,
+    USER_ROLE.agency_admin,
+    USER_ROLE.MODERATOR
+  ),
   BlockSeatController.deleteBlockSeat
 );
 
@@ -111,7 +131,11 @@ router.delete(
  */
 router.get(
   "/:id",
-  authWithUserStatus(USER_ROLE.whole_saler, USER_ROLE.MODERATOR),
+  authWithUserStatus(
+    USER_ROLE.whole_saler,
+    USER_ROLE.agency_admin,
+    USER_ROLE.MODERATOR
+  ),
   BlockSeatController.getBlockSeatById
 );
 
