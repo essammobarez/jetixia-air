@@ -359,3 +359,4 @@ POST /api/v1/booking/create
 - ✅ **Raw Data Stored**: Complete supplier response is stored in `supplierResponseData` for reference.
 - ✅ **Seat Selections**: Supports both Amadeus (`segmentId`, `travelerIds`, `number`) and ebooking (`paxReference`, `preference`) formats.
 
+

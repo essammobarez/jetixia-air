@@ -15,11 +15,7 @@ router.get(
 // Get all bookings by agency
 router.get(
   "/agency",
-  authWithUserStatus(
-    USER_ROLE.agency_admin,
-    USER_ROLE.sub_agent,
-
-  ),
+  authWithUserStatus(USER_ROLE.agency_admin, USER_ROLE.sub_agent),
   BlockSeatBookingController.getBookingsByAgency
 );
 
