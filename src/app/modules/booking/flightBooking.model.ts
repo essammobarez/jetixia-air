@@ -466,4 +466,7 @@ FlightBookingSchema.statics.findUpcomingDeadlines = function (hoursAhead = 24) {
 };
 
 // ==================== EXPORT ====================
-export const FlightBooking = model<any>("FlightBooking", FlightBookingSchema);
+// Check if model already exists to avoid OverwriteModelError
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const FlightBooking: any =
+  mongoose.models.FlightBooking || model("FlightBooking", FlightBookingSchema);

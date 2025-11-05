@@ -1,4 +1,4 @@
-import mongoose, { model } from "mongoose";
+import mongoose, { model, Document } from "mongoose";
 
 // Passenger/Traveler Schema for Flights
 const PassengerSchema = new mongoose.Schema(
@@ -151,10 +151,17 @@ const PaymentSchema = new mongoose.Schema(
 const FlightBookingSchema = new mongoose.Schema(
   {
     // Booking Identifiers
-    bookingId: { type: String, required: true, unique: true }, // Our internal booking ID
+    bookingId: { type: String, required: true, unique: true }, // Our internal booking ID (TKT-XXXXXXXX)
+    ticketId: { type: String, required: true, unique: true }, // Alias for bookingId (TKT-XXXXXXXX)
     sequenceNumber: { type: Number, required: true },
-    pnr: { type: String, required: true }, // Amadeus PNR (Passenger Name Record)
-    amadeusBookingId: { type: String, required: true }, // Amadeus booking ID
+    pnr: { type: String, required: true }, // Amadeus PNR or ebooking booking reference
+    amadeusBookingId: { type: String }, // Amadeus booking ID (for Amadeus bookings)
+    ebookingBookingReference: { type: String }, // ebooking booking reference (for ebooking bookings)
+    supplier: {
+      type: String,
+      enum: ["amadeus", "ebooking"],
+      required: true,
+    }, // Supplier used for booking
 
     // Status
     status: {
@@ -254,8 +261,8 @@ const FlightBookingSchema = new mongoose.Schema(
     automatedProcess: [{ type: Object }],
 
     // Raw Data Storage
-    flightOfferData: { type: Object }, // Complete flight offer from Amadeus
-    amadeusResponseData: { type: Object }, // Complete Amadeus booking response
+    flightOfferData: { type: Object }, // Complete flight offer from pricing API
+    supplierResponseData: { type: Object }, // Complete supplier booking response (Amadeus or ebooking)
 
     // Support and Modification
     supportTickets: [
@@ -305,4 +312,23 @@ FlightBookingSchema.pre("save", function (next) {
   next();
 });
 
-export const FlightBooking = model<any>("FlightBooking", FlightBookingSchema);
+export interface IFlightBooking extends Document {
+  bookingId: string;
+  ticketId: string;
+  sequenceNumber: number;
+  pnr: string;
+  amadeusBookingId?: string;
+  ebookingBookingReference?: string;
+  supplier: "amadeus" | "ebooking";
+  status: string;
+  agency: string;
+  wholesaler: string;
+  subagent?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Check if model already exists to avoid OverwriteModelError
+export const FlightBooking =
+  (mongoose.models.FlightBooking as mongoose.Model<IFlightBooking>) ||
+  model<IFlightBooking>("FlightBooking", FlightBookingSchema);
