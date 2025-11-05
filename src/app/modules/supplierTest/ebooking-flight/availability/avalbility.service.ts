@@ -9,7 +9,7 @@ export const checkFlightAvailabilityService = async (
   offerIndex: string | number,
   body: any
 ) => {
-  const accesstoken = await getAccessToken();
+  const accesstoken = await getAccessToken(body.supplierId,body.wholesalerId);
   const url = `${BASE_URL}/api/flights/v1/search/results/${srk}/offers/${offerIndex}/availability?token=${body.token}`;
 
   const response = await axios.post(url, body, {

@@ -7,6 +7,8 @@ export const bookFlightService = async (
   srk: string,
   offerIndex: string,
   searchToken: string,
+  wholesalerId:string,
+  supplierId:string,
   body: {
     availabilityToken: string;
     clientRef: string;
@@ -20,7 +22,7 @@ export const bookFlightService = async (
     }[];
   }
 ) => {
-  const accessToken = await getAccessToken();
+  const accessToken = await getAccessToken(supplierId,wholesalerId);
 
   const url = `${BASE_URL}/api/flights/v1/search/results/${srk}/offers/${offerIndex}/book?token=${encodeURIComponent(searchToken)}`;
 

@@ -10,6 +10,8 @@ export const bookFlight = catchAsync(async (req: Request, res: Response) => {
     searchToken,
     availabilityToken,
     clientRef,
+    wholealerId,
+    supplierId,
     travelers,
   } = req.body;
 
@@ -28,7 +30,7 @@ export const bookFlight = catchAsync(async (req: Request, res: Response) => {
     };
   });
 
-  const result = await bookFlightService(srk, offerIndex, searchToken, {
+  const result = await bookFlightService(srk, offerIndex, searchToken, wholealerId,supplierId,{
     availabilityToken,
     clientRef,
     travelers: normalizedTravelers,
