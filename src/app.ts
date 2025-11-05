@@ -17,7 +17,7 @@ app.use(express.json());
 app.use(cookieParser());
 
 const corsOptions = {
-  origin: ["http://localhost:3000", "https://admin.bdesktravel.com", "https://www.bdesktravel.com", "http://localhost:3001"],
+  origin: ["http://localhost:3000", "https://admin.bdesktravel.com", "https://www.bdesktravel.com", "http://localhost:3001", "https://flywinbookings.com", "https://admin.flywinbookings.com/"],
   methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE"],
   preflightContinue: false,
   credentials: true,
