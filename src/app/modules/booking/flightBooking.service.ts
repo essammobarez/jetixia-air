@@ -21,22 +21,32 @@ export const createAndSaveFlightBooking = async (
     // Step 1: Call Amadeus API to create booking
     const amadeusResponse: BookingResponse = await callAmadeusAPI(request);
 
-    // Step 2: Generate flight booking ID with agency/wholesaler slugs
+    // Step 2: Validate response
+    if (!amadeusResponse.flightOffers || amadeusResponse.flightOffers.length === 0) {
+      throw new AppError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        "Invalid booking response: No flight offers returned"
+      );
+    }
+
+    const flightOffer = amadeusResponse.flightOffers[0];
+
+    // Step 3: Generate flight booking ID with agency/wholesaler slugs
     const { flightBookingId, sequenceNumber } = await generateFlightBookingSlug(
       wholesalerSlug,
       agencySlug
     );
 
-    // Step 3: Determine flight type
+    // Step 4: Determine flight type
     let flightType = "ONE_WAY";
-    if (amadeusResponse.flightOffers[0].itineraries.length === 2) {
+    if (flightOffer.itineraries.length === 2) {
       flightType = "ROUND_TRIP";
-    } else if (amadeusResponse.flightOffers[0].itineraries.length > 2) {
+    } else if (flightOffer.itineraries.length > 2) {
       flightType = "MULTI_CITY";
     }
 
     // Extract pricing
-    const price = amadeusResponse.flightOffers[0].price;
+    const price = flightOffer.price;
     const totalPrice = {
       value: parseFloat(price.total),
       currency: price.currency,
@@ -79,7 +89,7 @@ export const createAndSaveFlightBooking = async (
 
       // Flight details
       flightType,
-      itineraries: amadeusResponse.flightOffers[0].itineraries,
+      itineraries: flightOffer.itineraries,
 
       // Passengers
       passengers: request.travelers.map((t) => ({
