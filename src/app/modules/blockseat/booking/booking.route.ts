@@ -12,6 +12,17 @@ router.get(
   BlockSeatBookingController.getBookingsByWholesaler
 );
 
+// Get all bookings by agency
+router.get(
+  "/agency",
+  authWithUserStatus(
+    USER_ROLE.agency_admin,
+    USER_ROLE.sub_agent,
+
+  ),
+  BlockSeatBookingController.getBookingsByAgency
+);
+
 // Create booking (Agency/Subuser/SubAdmin allowed depending on roles)
 router.post(
   "/",
