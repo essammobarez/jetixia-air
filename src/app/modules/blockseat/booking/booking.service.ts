@@ -179,7 +179,7 @@ export const createBooking = async (
             totalAmount: availableClass.price * quantity,
             commissions: blockSeat.commission,
           },
-          status: "CONFIRMED",
+          status: "PENDING",
           notes: payload.notes,
           audit: [
             {
@@ -254,6 +254,56 @@ export const getBookingsByWholesaler = async (
     throw new AppError(
       httpStatus.INTERNAL_SERVER_ERROR,
       error instanceof Error ? error.message : "Failed to retrieve bookings"
+    );
+  }
+};
+
+export const getBookingsByAgency = async (
+  agencyId: string,
+  page = 1,
+  limit = 10,
+  status?: "PENDING" | "CONFIRMED" | "CANCELLED"
+) => {
+  try {
+    const skip = (page - 1) * limit;
+
+    const query: any = { agency: agencyId };
+    if (status) {
+      query.status = status;
+    }
+
+    const [bookings, total] = await Promise.all([
+      BlockSeatBooking.find(query)
+        .populate({
+          path: "blockSeat",
+          select: "name airline route currency classes",
+        })
+        .populate({
+          path: "wholesaler",
+          select: "wholesalerName email phoneNumber",
+        })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      BlockSeatBooking.countDocuments(query),
+    ]);
+
+    return {
+      bookings,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  } catch (error) {
+    throw new AppError(
+      httpStatus.INTERNAL_SERVER_ERROR,
+      error instanceof Error
+        ? error.message
+        : "Failed to retrieve agency bookings"
     );
   }
 };

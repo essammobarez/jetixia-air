@@ -6,6 +6,7 @@ import {
   createBooking,
   getBookingById,
   getBookingsByWholesaler,
+  getBookingsByAgency,
   updateBookingStatus,
   CreateBookingRequest,
 } from "./booking.service";
@@ -114,6 +115,52 @@ const getBookingsByWholesalerController = catchAsync(
   }
 );
 
+const getBookingsByAgencyController = catchAsync(
+  async (req: any, res: Response) => {
+    // Extract agency ID from authenticated user
+    const agencyId = req.user?.agencyId || req.user?.agency;
+
+    if (!agencyId) {
+      return sendResponse(res, {
+        statusCode: httpStatus.UNAUTHORIZED,
+        success: false,
+        message: "Agency authentication required",
+        data: null,
+      });
+    }
+
+    // Get pagination and filter parameters
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const status = req.query.status as
+      | "PENDING"
+      | "CONFIRMED"
+      | "CANCELLED"
+      | undefined;
+
+    // Validate status if provided
+    if (status && !["PENDING", "CONFIRMED", "CANCELLED"].includes(status)) {
+      return sendResponse(res, {
+        statusCode: httpStatus.BAD_REQUEST,
+        success: false,
+        message: "Status must be PENDING, CONFIRMED, or CANCELLED",
+        data: null,
+      });
+    }
+
+    // Get bookings for this agency
+    const result = await getBookingsByAgency(agencyId, page, limit, status);
+
+    return sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Agency bookings retrieved successfully",
+      data: result.bookings,
+      meta: result.pagination,
+    });
+  }
+);
+
 const updateStatusController = catchAsync(async (req: any, res: Response) => {
   const { id } = req.params;
   const { status } = req.body as { status: "CONFIRMED" | "CANCELLED" };
@@ -139,5 +186,6 @@ export const BlockSeatBookingController = {
   createBooking: createBookingController,
   getBooking: getBookingController,
   getBookingsByWholesaler: getBookingsByWholesalerController,
+  getBookingsByAgency: getBookingsByAgencyController,
   updateStatus: updateStatusController,
 };

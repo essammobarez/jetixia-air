@@ -127,7 +127,7 @@ const BlockSeatBookingSchema = new Schema<IBlockSeatBooking>(
     status: {
       type: String,
       enum: ["PENDING", "CONFIRMED", "CANCELLED"],
-      default: "CONFIRMED",
+      default: "PENDING",
     },
     notes: { type: String },
     audit: [
