@@ -222,7 +222,8 @@ async function handleEbookingPricing(
       request.srk!,
       request.offerIndex!,
       request.itineraryIndex || 0,
-      request.token!
+      request.token!,
+      request.wholesalerId!
     );
 
     // Transform ebooking response to unified format

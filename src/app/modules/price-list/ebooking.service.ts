@@ -10,6 +10,7 @@ import {
   EbookingDataLists,
 } from "./ebooking.interface";
 import { FlightOfferQuery } from "./priceList.interface";
+import { Wholesaler } from "../wholesaler/wholesaler.model";
 
 /**
  * Convert FlightOfferQuery to ebooking search request format
@@ -68,7 +69,7 @@ export const searchEbookingFlights = async (
 ): Promise<EbookingSearchResponse> => {
   try {
     // Step 1: Get access token
-    const token = await getEbookingAccessToken();
+    const token = await getEbookingAccessToken("680e4431309622be28c28eda",query.wholesalerId);
     console.log("ebooking token", token);
     // Step 2: Convert query to ebooking format
     const searchRequest = convertToEbookingRequest(query);
@@ -281,11 +282,12 @@ export const getEbookingAvailability = async (
   srk: string,
   offerIndex: string,
   itineraryIndex: number = 0,
-  token: string
+  token: string,
+  wholesalerId?: string
 ) => {
   try {
     // Get access token
-    const accessToken = await getEbookingAccessToken();
+    const accessToken = await getEbookingAccessToken("680e4431309622be28c28eda",wholesalerId);
 
     // Build availability API URL with itinerary index
     const baseUrl = getEbookingBaseUrl();
@@ -344,11 +346,12 @@ export const getEbookingSeatMap = async (
   offerIndex: string,
   token: string,
   availabilityToken: string,
-  segmentReference: string
+  segmentReference: string,
+  wholesalerId?: string
 ) => {
   try {
     // Get access token
-    const accessToken = await getEbookingAccessToken();
+    const accessToken = await getEbookingAccessToken("680e4431309622be28c28eda",wholesalerId);
 
     // Build seat map API URL
     const baseUrl = getEbookingBaseUrl();

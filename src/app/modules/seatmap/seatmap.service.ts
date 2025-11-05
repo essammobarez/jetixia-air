@@ -19,7 +19,7 @@ async function handleEbookingSeatMap(request: SeatMapRequest) {
       !request.offerIndex ||
       !request.token ||
       !request.availabilityToken ||
-      !request.segmentReference
+      !request.segmentReference 
     ) {
       throw new AppError(
         httpStatus.BAD_REQUEST,
@@ -35,7 +35,8 @@ async function handleEbookingSeatMap(request: SeatMapRequest) {
       request.offerIndex,
       request.token,
       request.availabilityToken,
-      request.segmentReference
+      request.segmentReference,
+      request.wholesalerId
     );
 
     console.log("✅ ebooking seatmap successful");
@@ -110,7 +111,7 @@ export const getSeatMaps = async (request: SeatMapRequest): Promise<any> => {
     const seatMapResponse: SeatMapResponse = response.data;
 
     return seatMapResponse;
-  } catch (error: unknown) {
+  } catch (error: unknown) { 
     console.error("=== SEATMAP API ERROR ===");
 
     const err = error as {

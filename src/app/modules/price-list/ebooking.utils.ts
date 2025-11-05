@@ -1,84 +1,91 @@
+import dotenv from "dotenv";
+dotenv.config();
+
 import axios from "axios";
 import AppError from "../../errors/AppError";
 import httpStatus from "http-status";
-import {
-  EbookingAuthRequest,
-  EbookingAuthResponse,
-} from "./ebooking.interface";
+import { EbookingAuthResponse } from "./ebooking.interface";
+import SupplierConnectionModel from "../supplierConnections/supplierConnection.model";
 
-const EBOOKING_BASE_URL = "https://www.ebookingcenter.com";
-// Correct token endpoint (found through testing)
-const EBOOKING_TOKEN_URL = `${EBOOKING_BASE_URL}/tbs/reseller/oauth2/token`;
-
-let accessToken: string | null = null;
-let tokenExpiresAt: number | null = null;
-let refreshTokenPromise: Promise<string | null> | null = null;
+// 🧠 Cache object to store tokens by supplier-wholesaler pair
+const tokenCache = new Map<
+  string,
+  { accessToken: string | null; tokenExpiresAt: number | null; refreshPromise: Promise<string | null> | null }
+>();
 
 /**
- * Fetch ebooking OAuth2 access token
- * Step 1: Authorization - https://www.ebookingcenter.com/tbs/reseller/api/oauth2/token
+ * Fetch ebooking OAuth2 access token dynamically from DB credentials
  */
-async function fetchEbookingAccessToken(): Promise<string | null> {
+async function fetchEbookingAccessToken(
+  supplierId?: string,
+  wholesalerId?: string
+): Promise<string | null> {
   try {
-    const clientId = process.env.EBOOKING_CLIENT_ID;
-    const clientSecret = process.env.EBOOKING_CLIENT_SECRET;
-    const requestedScopes =
-      process.env.EBOOKING_REQUESTED_SCOPES ||
-      "read:flights-search write:flights-book";
+    const supplierCredentials = await SupplierConnectionModel.findOne({
+      supplier: supplierId,
+      wholesaler: wholesalerId,
+      active: true,
+      valid: true,
+    });
+console.log("creds",supplierCredentials)
+    console.log("🔑 supplierCredentials:", supplierCredentials?.credentials);
 
-    if (!clientId || !clientSecret) {
+    if (
+      !supplierCredentials?.credentials?.client_id ||
+      !supplierCredentials?.credentials?.client_secret ||
+      !process.env.EBOOKING_TOKEN_URL ||
+      !supplierCredentials?.credentials?.scope
+    ) {
       throw new AppError(
         httpStatus.INTERNAL_SERVER_ERROR,
-        "ebooking credentials not configured. Please set EBOOKING_CLIENT_ID and EBOOKING_CLIENT_SECRET in .env file"
+        "Required credentials are missing for ebooking supplier connection."
       );
     }
 
-    const authRequest: EbookingAuthRequest = {
-      grant_type: "client_credentials",
-      client_id: clientId,
-      client_secret: clientSecret,
-      scope: requestedScopes,
-    };
-
-    // Convert to URL-encoded format
     const data = new URLSearchParams();
-    data.append("grant_type", authRequest.grant_type);
-    data.append("client_id", authRequest.client_id);
-    data.append("client_secret", authRequest.client_secret);
-    data.append("scope", authRequest.scope);
+    data.append("grant_type", "client_credentials");
+    data.append("client_id", String(supplierCredentials.credentials.client_id));
+    data.append("client_secret", String(supplierCredentials.credentials.client_secret));
+    data.append("scope", String(supplierCredentials.credentials.scope));
 
-    console.log("🔐 Fetching ebooking access token...");
-    console.log("📋 Token URL:", EBOOKING_TOKEN_URL);
+    console.log("📤 EBOOKING_TOKEN_URL:", process.env.EBOOKING_TOKEN_URL);
+    console.log("🧠 Request Body:", data.toString());
 
-    const response = await axios.post(EBOOKING_TOKEN_URL, data.toString(), {
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      timeout: 10000,
-    });
+    const response = await axios.post(
+      process.env.EBOOKING_TOKEN_URL,
+      data.toString(),
+      {
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        timeout: 10000,
+      }
+    );
+
+    console.log("=== 📥 Raw Response Start ===");
+    console.log("Status Code:", response.status);
+    console.log("Response Data:", JSON.stringify(response.data, null, 2));
+    console.log("=== 📥 Raw Response End ===");
 
     const result: EbookingAuthResponse = response.data;
-    accessToken = result.access_token;
-    const expiresIn = result.expires_in || 86400; // Default 24 hours
-    tokenExpiresAt = Date.now() + expiresIn * 1000;
+    const expiresIn = result.expires_in || 86400;
+    const tokenExpiresAt = Date.now() + expiresIn * 1000;
 
-    console.log("✅ ebooking access token fetched successfully");
-    console.log(`⏰ Token expires in ${Math.round(expiresIn / 3600)} hours`);
+    console.log("✅ Token fetched successfully for:", supplierId, wholesalerId);
 
-    return accessToken;
-  } catch (error: unknown) {
-    const err = error as {
-      response?: { status: number; data: unknown };
-      request?: unknown;
-      message?: string;
-    };
+    // 🧠 Cache token per supplier-wholesaler pair
+    const key = `${supplierId}-${wholesalerId}`;
+    tokenCache.set(key, {
+      accessToken: result.access_token,
+      tokenExpiresAt,
+      refreshPromise: null,
+    });
 
-    console.error("❌ Error fetching ebooking access token:", err);
-
-    if (err.response) {
-      console.error("Response error:", err.response.status, err.response.data);
-    } else if (err.request) {
-      console.error("No response received from ebooking API");
+    return result.access_token;
+  } catch (error: any) {
+    console.error("=== ❌ Error fetching token ===");
+    if (error.response) {
+      console.error("Error Response:", JSON.stringify(error.response.data, null, 2));
+    } else {
+      console.error("Error:", error.message);
     }
 
     throw new AppError(
@@ -89,57 +96,42 @@ async function fetchEbookingAccessToken(): Promise<string | null> {
 }
 
 /**
- * Get ebooking access token with auto-refresh
- * Implements token caching and automatic refresh when expired
+ * Get ebooking access token (auto refresh when expired)
  */
-export const getEbookingAccessToken = async (): Promise<string> => {
-  // Check if we have a valid token
-  if (accessToken && tokenExpiresAt && Date.now() < tokenExpiresAt - 60000) {
-    // Token is valid and not expiring in the next minute
-    return accessToken;
-  }
+export async function getEbookingAccessToken(
+  supplierId?: string,
+  wholesalerId?: string
+): Promise<string> {
+  const key = `${supplierId}-${wholesalerId}`;
+  let cache = tokenCache.get(key);
 
-  // If there's already a refresh in progress, wait for it
-  if (refreshTokenPromise) {
-    const token = await refreshTokenPromise;
-    if (token) {
-      return token;
-    }
-  }
-
-  // Start a new refresh
-  refreshTokenPromise = fetchEbookingAccessToken();
-
-  try {
-    const token = await refreshTokenPromise;
-    refreshTokenPromise = null;
-
-    if (!token) {
-      throw new AppError(
-        httpStatus.INTERNAL_SERVER_ERROR,
-        "Failed to get ebooking access token"
-      );
+  if (!cache || !cache.accessToken || !cache.tokenExpiresAt || Date.now() >= cache.tokenExpiresAt - 60000) {
+    if (!cache) {
+      cache = { accessToken: null, tokenExpiresAt: null, refreshPromise: null };
+      tokenCache.set(key, cache);
     }
 
-    return token;
-  } catch (error) {
-    refreshTokenPromise = null;
-    throw error;
-  }
-};
+    if (!cache.refreshPromise) {
+      cache.refreshPromise = fetchEbookingAccessToken(supplierId, wholesalerId).finally(() => {
+        const current = tokenCache.get(key);
+        if (current) current.refreshPromise = null;
+      });
+    }
 
-/**
- * Get ebooking base URL
- */
+    return (await cache.refreshPromise) as string;
+  }
+
+  return cache.accessToken as string;
+}
+
 export const getEbookingBaseUrl = (): string => {
-  return EBOOKING_BASE_URL;
+  return process.env.EBOOKING_BASE_URL || "https://www.ebookingcenter.com";
 };
 
 /**
- * Clear ebooking token cache (useful for testing)
+ * Clear cached ebooking tokens (for testing or manual refresh)
  */
 export const clearEbookingTokenCache = (): void => {
-  accessToken = null;
-  tokenExpiresAt = null;
-  refreshTokenPromise = null;
+  tokenCache.clear();
+  console.log("🧹 All ebooking token caches cleared.");
 };

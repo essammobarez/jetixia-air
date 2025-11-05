@@ -22,6 +22,7 @@ const getFlightOffers = catchAsync(async (req: Request, res: Response) => {
     nonStop: req.body.nonStop,
     max: req.body.max,
     supplier: req.body.supplier || "amadeus",
+    wholesalerId: req.body.wholesalerId,
   };
 
   // Use supplier factory for multi-supplier support

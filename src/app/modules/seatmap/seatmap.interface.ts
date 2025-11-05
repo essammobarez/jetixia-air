@@ -7,6 +7,7 @@ export interface SeatMapRequest {
   token?: string; // Search results token
   availabilityToken?: string; // Availability token from pricing response
   segmentReference?: string;
+  wholesalerId?: string;
 }
 
 export interface SeatCharacteristics {

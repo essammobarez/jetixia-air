@@ -18,6 +18,7 @@ const fetchSeatMaps = catchAsync(async (req: Request, res: Response) => {
     token: req.body.token,
     availabilityToken: req.body.availabilityToken,
     segmentReference: req.body.segmentReference,
+    wholesalerId: req.body.wholesalerId,
   };
 
   const result = await getSeatMaps(request);
