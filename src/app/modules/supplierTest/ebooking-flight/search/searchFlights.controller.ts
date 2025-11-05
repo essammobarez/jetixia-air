@@ -16,6 +16,8 @@ const fetchFlights = catchAsync(async (req: Request, res: Response) => {
     airline,
     nationality,
     date,
+    wholesalerId,
+    supplierId,
   } = req.body;
 
   const lowerTrip = (tripType || "").toLowerCase();
@@ -131,7 +133,7 @@ const fetchFlights = catchAsync(async (req: Request, res: Response) => {
     timeout: 10,
   };
 
-  const data = await searchFlightsService(payload);
+  const data = await searchFlightsService(payload,wholesalerId,supplierId);
 
   return sendResponse(res, {
     statusCode: httpStatus.OK,
