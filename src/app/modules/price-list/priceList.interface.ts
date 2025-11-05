@@ -10,6 +10,7 @@ export interface FlightOfferQuery {
   nonStop?: boolean;
   max?: number;
   supplier?: "amadeus" | "ebooking" | "both";
+  wholesalerId?: string;
 }
 
 export interface AirlineInfo {

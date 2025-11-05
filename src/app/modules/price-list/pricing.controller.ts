@@ -15,6 +15,7 @@ const confirmFlightPricing = catchAsync(async (req: Request, res: Response) => {
     offerIndex: req.body.offerIndex,
     itineraryIndex: req.body.itineraryIndex,
     token: req.body.token,
+    wholesalerId: req.body.wholesalerId,
   };
 
   const result = await getFlightOfferPricing(request);

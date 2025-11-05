@@ -6,6 +6,7 @@ export interface FlightOfferPricingRequest {
   offerIndex?: string;
   itineraryIndex?: number;
   token?: string;
+  wholesalerId?: string;
 }
 
 export interface FlightOfferPricingResponse {
