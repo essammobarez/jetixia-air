@@ -109,6 +109,9 @@ export interface BookingRequest {
   wholesalerId?: string;
   agencyId?: string;
   subagentId?: string;
+
+  // Metadata - Flexible field for additional custom data
+  meta?: Record<string, any>;
 }
 
 export interface BookingResponse {
@@ -134,4 +137,7 @@ export interface BookingResponse {
   agency?: string;
   wholesaler?: string;
   subagent?: string;
+
+  // Metadata
+  meta?: Record<string, any>;
 }

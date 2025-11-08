@@ -265,3 +265,5 @@ Both models now support slug-based IDs with the same pattern:
 
 **Unified experience across both booking models!** 🎉
 
+
+

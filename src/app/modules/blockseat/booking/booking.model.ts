@@ -24,6 +24,7 @@ export interface IBlockSeatContact {
 
 export interface IBlockSeatBooking extends Document {
   reference?: string;
+  pnr?: string; // Passenger Name Record - set when status is CONFIRMED
   blockSeat: Schema.Types.ObjectId; // ref to Flight_BlockSeat
   agency: Schema.Types.ObjectId; // Agency placing the booking
   wholesaler?: Schema.Types.ObjectId; // derived from blockSeat if needed
@@ -92,6 +93,7 @@ const ContactSchema = new Schema<IBlockSeatContact>(
 const BlockSeatBookingSchema = new Schema<IBlockSeatBooking>(
   {
     reference: { type: String, index: true, unique: true },
+    pnr: { type: String, index: true }, // Passenger Name Record
     blockSeat: {
       type: Schema.Types.ObjectId,
       ref: "Flight_BlockSeat",

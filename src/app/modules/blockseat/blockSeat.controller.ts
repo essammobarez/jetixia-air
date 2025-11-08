@@ -78,6 +78,24 @@ const createBlockSeatController = catchAsync(
       });
     }
 
+    if (!route.departureFlightNumber) {
+      return sendResponse(res, {
+        statusCode: httpStatus.BAD_REQUEST,
+        success: false,
+        message: "Departure flight number is required",
+        data: null,
+      });
+    }
+
+    if (route.tripType === "ROUND_TRIP" && !route.returnFlightNumber) {
+      return sendResponse(res, {
+        statusCode: httpStatus.BAD_REQUEST,
+        success: false,
+        message: "Return flight number is required for ROUND_TRIP",
+        data: null,
+      });
+    }
+
     if (
       !availableDates ||
       !Array.isArray(availableDates) ||
@@ -102,14 +120,42 @@ const createBlockSeatController = catchAsync(
         });
       }
 
-      // Validate return date for ROUND_TRIP
-      if (route.tripType === "ROUND_TRIP" && !dateObj.returnDate) {
+      if (!dateObj.departureTime) {
         return sendResponse(res, {
           statusCode: httpStatus.BAD_REQUEST,
           success: false,
-          message: "Return date is required for ROUND_TRIP bookings",
+          message: "Each date must have a departureTime",
           data: null,
         });
+      }
+
+      if (!dateObj.deadline) {
+        return sendResponse(res, {
+          statusCode: httpStatus.BAD_REQUEST,
+          success: false,
+          message: "Each date must have a booking deadline",
+          data: null,
+        });
+      }
+
+      // Validate return date and time for ROUND_TRIP
+      if (route.tripType === "ROUND_TRIP") {
+        if (!dateObj.returnDate) {
+          return sendResponse(res, {
+            statusCode: httpStatus.BAD_REQUEST,
+            success: false,
+            message: "Return date is required for ROUND_TRIP bookings",
+            data: null,
+          });
+        }
+        if (!dateObj.returnTime) {
+          return sendResponse(res, {
+            statusCode: httpStatus.BAD_REQUEST,
+            success: false,
+            message: "Return time is required for ROUND_TRIP bookings",
+            data: null,
+          });
+        }
       }
     }
 
@@ -124,15 +170,39 @@ const createBlockSeatController = catchAsync(
 
     // Validate each class
     for (const classItem of classes) {
+      if (!classItem.classId || !classItem.totalSeats) {
+        return sendResponse(res, {
+          statusCode: httpStatus.BAD_REQUEST,
+          success: false,
+          message: "Each class must have classId and totalSeats",
+          data: null,
+        });
+      }
+
       if (
-        !classItem.classId ||
-        !classItem.totalSeats ||
-        classItem.price === undefined
+        !classItem.pricing ||
+        !classItem.pricing.adult ||
+        !classItem.pricing.children ||
+        !classItem.pricing.infant
       ) {
         return sendResponse(res, {
           statusCode: httpStatus.BAD_REQUEST,
           success: false,
-          message: "Each class must have classId, totalSeats, and price",
+          message:
+            "Each class must have pricing for adult, children, and infant",
+          data: null,
+        });
+      }
+
+      if (
+        classItem.pricing.adult.price === undefined ||
+        classItem.pricing.children.price === undefined ||
+        classItem.pricing.infant.price === undefined
+      ) {
+        return sendResponse(res, {
+          statusCode: httpStatus.BAD_REQUEST,
+          success: false,
+          message: "Each passenger type must have a price",
           data: null,
         });
       }
@@ -486,13 +556,33 @@ const updateBlockSeatController = catchAsync(
     }
 
     // If route is being updated, validate it
-    if (route !== undefined && (!route.from || !route.to || !route.tripType)) {
-      return sendResponse(res, {
-        statusCode: httpStatus.BAD_REQUEST,
-        success: false,
-        message: "Route information must include from, to, and tripType",
-        data: null,
-      });
+    if (route !== undefined) {
+      if (!route.from || !route.to || !route.tripType) {
+        return sendResponse(res, {
+          statusCode: httpStatus.BAD_REQUEST,
+          success: false,
+          message: "Route information must include from, to, and tripType",
+          data: null,
+        });
+      }
+
+      if (!route.departureFlightNumber) {
+        return sendResponse(res, {
+          statusCode: httpStatus.BAD_REQUEST,
+          success: false,
+          message: "Departure flight number is required",
+          data: null,
+        });
+      }
+
+      if (route.tripType === "ROUND_TRIP" && !route.returnFlightNumber) {
+        return sendResponse(res, {
+          statusCode: httpStatus.BAD_REQUEST,
+          success: false,
+          message: "Return flight number is required for ROUND_TRIP",
+          data: null,
+        });
+      }
     }
 
     // If availableDates is being updated, validate them
@@ -518,14 +608,42 @@ const updateBlockSeatController = catchAsync(
           });
         }
 
-        // Validate return date for ROUND_TRIP
-        if (tripType === "ROUND_TRIP" && !dateObj.returnDate) {
+        if (!dateObj.departureTime) {
           return sendResponse(res, {
             statusCode: httpStatus.BAD_REQUEST,
             success: false,
-            message: "Return date is required for ROUND_TRIP bookings",
+            message: "Each date must have a departureTime",
             data: null,
           });
+        }
+
+        if (!dateObj.deadline) {
+          return sendResponse(res, {
+            statusCode: httpStatus.BAD_REQUEST,
+            success: false,
+            message: "Each date must have a booking deadline",
+            data: null,
+          });
+        }
+
+        // Validate return date and time for ROUND_TRIP
+        if (tripType === "ROUND_TRIP") {
+          if (!dateObj.returnDate) {
+            return sendResponse(res, {
+              statusCode: httpStatus.BAD_REQUEST,
+              success: false,
+              message: "Return date is required for ROUND_TRIP bookings",
+              data: null,
+            });
+          }
+          if (!dateObj.returnTime) {
+            return sendResponse(res, {
+              statusCode: httpStatus.BAD_REQUEST,
+              success: false,
+              message: "Return time is required for ROUND_TRIP bookings",
+              data: null,
+            });
+          }
         }
       }
     }
@@ -579,15 +697,39 @@ const updateBlockSeatController = catchAsync(
 
       // Validate each class
       for (const classItem of classes) {
+        if (!classItem.classId || !classItem.totalSeats) {
+          return sendResponse(res, {
+            statusCode: httpStatus.BAD_REQUEST,
+            success: false,
+            message: "Each class must have classId and totalSeats",
+            data: null,
+          });
+        }
+
         if (
-          !classItem.classId ||
-          !classItem.totalSeats ||
-          classItem.price === undefined
+          !classItem.pricing ||
+          !classItem.pricing.adult ||
+          !classItem.pricing.children ||
+          !classItem.pricing.infant
         ) {
           return sendResponse(res, {
             statusCode: httpStatus.BAD_REQUEST,
             success: false,
-            message: "Each class must have classId, totalSeats, and price",
+            message:
+              "Each class must have pricing for adult, children, and infant",
+            data: null,
+          });
+        }
+
+        if (
+          classItem.pricing.adult.price === undefined ||
+          classItem.pricing.children.price === undefined ||
+          classItem.pricing.infant.price === undefined
+        ) {
+          return sendResponse(res, {
+            statusCode: httpStatus.BAD_REQUEST,
+            success: false,
+            message: "Each passenger type must have a price",
             data: null,
           });
         }

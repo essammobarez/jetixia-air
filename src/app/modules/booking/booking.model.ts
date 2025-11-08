@@ -152,6 +152,7 @@ const FlightBookingSchema = new mongoose.Schema(
   {
     // Booking Identifiers
     bookingId: { type: String, required: true, unique: true }, // Our internal booking ID (TKT-XXXXXXXX)
+    flightBookingId: { type: String, unique: true, sparse: true }, // Legacy field for compatibility
     ticketId: { type: String, required: true, unique: true }, // Alias for bookingId (TKT-XXXXXXXX)
     sequenceNumber: { type: Number, required: true },
     pnr: { type: String, required: true }, // Amadeus PNR or ebooking booking reference
@@ -288,6 +289,12 @@ const FlightBookingSchema = new mongoose.Schema(
       wholesaler: { type: Date, default: null },
     },
 
+    // Metadata - Flexible field for additional supplier-specific or custom data
+    meta: {
+      type: mongoose.Schema.Types.Mixed,
+      default: {},
+    },
+
     // Timestamps
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now },
@@ -324,6 +331,7 @@ export interface IFlightBooking extends Document {
   agency: string;
   wholesaler: string;
   subagent?: string;
+  meta?: Record<string, any>; // Flexible metadata object
   createdAt: Date;
   updatedAt: Date;
 }
