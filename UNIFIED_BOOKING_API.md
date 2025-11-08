@@ -360,3 +360,4 @@ POST /api/v1/booking/create
 - ✅ **Seat Selections**: Supports both Amadeus (`segmentId`, `travelerIds`, `number`) and ebooking (`paxReference`, `preference`) formats.
 
 
+

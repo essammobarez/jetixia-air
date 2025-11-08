@@ -157,6 +157,49 @@ export const createBooking = async (
       );
     }
 
+    // Calculate pricing breakdown by passenger type
+    const adultCount = payload.passengers.filter(
+      (p) => p.paxType === "ADT"
+    ).length;
+    const childCount = payload.passengers.filter(
+      (p) => p.paxType === "CHD"
+    ).length;
+    const infantCount = payload.passengers.filter(
+      (p) => p.paxType === "INF"
+    ).length;
+
+    const adultPrice = availableClass.pricing.adult.price;
+    const childPrice = availableClass.pricing.children.price;
+    const infantPrice = availableClass.pricing.infant.price;
+
+    const totalAmount =
+      adultCount * adultPrice +
+      childCount * childPrice +
+      infantCount * infantPrice;
+
+    const breakdown = [];
+    if (adultCount > 0)
+      breakdown.push({
+        paxType: "ADT",
+        count: adultCount,
+        unit: adultPrice,
+        subtotal: adultCount * adultPrice,
+      });
+    if (childCount > 0)
+      breakdown.push({
+        paxType: "CHD",
+        count: childCount,
+        unit: childPrice,
+        subtotal: childCount * childPrice,
+      });
+    if (infantCount > 0)
+      breakdown.push({
+        paxType: "INF",
+        count: infantCount,
+        unit: infantPrice,
+        subtotal: infantCount * infantPrice,
+      });
+
     const booking = await BlockSeatBooking.create(
       [
         {
@@ -175,11 +218,15 @@ export const createBooking = async (
           quantity,
           priceSnapshot: {
             currency: blockSeat.currency,
-            unitPrice: availableClass.price,
-            totalAmount: availableClass.price * quantity,
-            commissions: blockSeat.commission,
+            unitPrice: adultPrice, // Use adult price as reference
+            totalAmount: totalAmount,
+            breakdown: breakdown,
+            commissions: {
+              supplier: blockSeat.commission?.supplierCommission,
+              agency: availableClass.pricing.adult.commission, // Use adult commission as primary
+            },
           },
-          status: "PENDING",
+          status: "CONFIRMED",
           notes: payload.notes,
           audit: [
             {
@@ -311,6 +358,7 @@ export const getBookingsByAgency = async (
 export const updateBookingStatus = async (
   id: string,
   status: "CONFIRMED" | "CANCELLED",
+  pnr?: string,
   userId?: string
 ) => {
   const session = await mongoose.startSession();
@@ -344,11 +392,18 @@ export const updateBookingStatus = async (
     }
 
     booking.status = status;
+
+    // Set PNR if provided and status is CONFIRMED
+    if (status === "CONFIRMED" && pnr) {
+      booking.pnr = pnr;
+    }
+
     booking.audit = booking.audit || [];
     booking.audit.push({
       at: new Date(),
       by: userId as any,
       action: `STATUS_${status}`,
+      meta: pnr ? { pnr } : undefined,
     });
     await booking.save({ session });
     await session.commitTransaction();

@@ -47,7 +47,7 @@ router.patch(
   authWithUserStatus(
     USER_ROLE.whole_saler,
     USER_ROLE.MODERATOR,
-    USER_ROLE.agency_admin
+    // USER_ROLE.agency_admin
   ),
   BlockSeatBookingController.updateStatus
 );

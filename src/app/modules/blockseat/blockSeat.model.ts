@@ -16,6 +16,8 @@ const RouteSchema = new Schema(
       enum: ["ONE_WAY", "ROUND_TRIP"],
       required: true,
     },
+    departureFlightNumber: { type: String, required: true }, // Flight number for outbound flight
+    returnFlightNumber: { type: String }, // Flight number for return flight (ROUND_TRIP only)
   },
   { _id: false }
 );
@@ -24,11 +26,44 @@ const RouteSchema = new Schema(
 const ClassInventorySchema = new Schema(
   {
     classId: { type: Number, required: true },
-    className: { type: String },
     totalSeats: { type: Number, required: true },
     bookedSeats: { type: Number, default: 0 },
     availableSeats: { type: Number, required: true },
-    price: { type: Number, required: true },
+    pricing: {
+      adult: {
+        price: { type: Number, required: true },
+        commission: {
+          type: {
+            type: String,
+            enum: ["FIXED_AMOUNT", "PERCENTAGE"],
+            default: "PERCENTAGE",
+          },
+          value: { type: Number, default: 0 },
+        },
+      },
+      children: {
+        price: { type: Number, required: true },
+        commission: {
+          type: {
+            type: String,
+            enum: ["FIXED_AMOUNT", "PERCENTAGE"],
+            default: "PERCENTAGE",
+          },
+          value: { type: Number, default: 0 },
+        },
+      },
+      infant: {
+        price: { type: Number, required: true },
+        commission: {
+          type: {
+            type: String,
+            enum: ["FIXED_AMOUNT", "PERCENTAGE"],
+            default: "PERCENTAGE",
+          },
+          value: { type: Number, default: 0 },
+        },
+      },
+    },
     currency: { type: String, required: true },
   },
   { _id: false }
@@ -93,7 +128,10 @@ const CommissionSchema = new Schema(
 const AvailableDatesSchema = new Schema(
   {
     departureDate: { type: String, required: true }, // YYYY-MM-DD format
+    departureTime: { type: String, required: true }, // HH:MM format (24-hour)
     returnDate: { type: String }, // Optional, only for ROUND_TRIP
+    returnTime: { type: String }, // Optional, only for ROUND_TRIP - HH:MM format
+    deadline: { type: String, required: true }, // YYYY-MM-DD format - booking deadline for this date
   },
   { _id: false }
 );
@@ -116,18 +154,44 @@ export interface IBlockSeat extends Document {
       iataCode: string;
     };
     tripType: "ONE_WAY" | "ROUND_TRIP";
+    departureFlightNumber: string; // Flight number for outbound flight
+    returnFlightNumber?: string; // Flight number for return flight (ROUND_TRIP only)
   };
   availableDates: Array<{
     departureDate: string;
+    departureTime: string;
     returnDate?: string;
+    returnTime?: string;
+    deadline: string; // Booking deadline for this date
   }>;
   classes: Array<{
     classId: number;
-    className?: string;
     totalSeats: number;
     bookedSeats: number;
     availableSeats: number;
-    price: number;
+    pricing: {
+      adult: {
+        price: number;
+        commission: {
+          type: "FIXED_AMOUNT" | "PERCENTAGE";
+          value: number;
+        };
+      };
+      children: {
+        price: number;
+        commission: {
+          type: "FIXED_AMOUNT" | "PERCENTAGE";
+          value: number;
+        };
+      };
+      infant: {
+        price: number;
+        commission: {
+          type: "FIXED_AMOUNT" | "PERCENTAGE";
+          value: number;
+        };
+      };
+    };
     currency: string;
   }>;
   currency: string;

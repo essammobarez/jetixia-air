@@ -159,6 +159,7 @@ async function saveBookingToDatabase(
   // Create booking document
   const booking = new FlightBooking({
     bookingId: bookingId,
+    flightBookingId: bookingId, // Legacy field for compatibility
     ticketId: ticketId,
     sequenceNumber,
     pnr,
@@ -213,6 +214,8 @@ async function saveBookingToDatabase(
           }\nSeat Requests: ${JSON.stringify(request.seatRequests)}`.trim(),
         }
       : {}),
+    // Store metadata if provided
+    meta: request.meta || {},
   });
 
   await booking.save();

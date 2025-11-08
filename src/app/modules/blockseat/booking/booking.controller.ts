@@ -163,7 +163,11 @@ const getBookingsByAgencyController = catchAsync(
 
 const updateStatusController = catchAsync(async (req: any, res: Response) => {
   const { id } = req.params;
-  const { status } = req.body as { status: "CONFIRMED" | "CANCELLED" };
+  const { status, pnr } = req.body as {
+    status: "CONFIRMED" | "CANCELLED";
+    pnr?: string;
+  };
+
   if (!status || !["CONFIRMED", "CANCELLED"].includes(status)) {
     return sendResponse(res, {
       statusCode: httpStatus.BAD_REQUEST,
@@ -172,8 +176,20 @@ const updateStatusController = catchAsync(async (req: any, res: Response) => {
       data: null,
     });
   }
+
+  // PNR validation: if status is CONFIRMED and PNR is provided, validate it's not empty
+  if (status === "CONFIRMED" && pnr !== undefined && pnr.trim() === "") {
+    return sendResponse(res, {
+      statusCode: httpStatus.BAD_REQUEST,
+      success: false,
+      message: "PNR cannot be empty",
+      data: null,
+    });
+  }
+
   const userId = req.user?.userId;
-  const booking = await updateBookingStatus(id, status, userId);
+  const booking = await updateBookingStatus(id, status, pnr, userId);
+
   return sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,

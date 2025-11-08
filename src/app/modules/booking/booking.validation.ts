@@ -179,6 +179,9 @@ const createFlightBookingSchema = z.object({
     wholesalerId: z.string().optional(),
     agencyId: z.string().optional(),
     subagentId: z.string().optional(),
+
+    // Metadata - Flexible field for additional custom data
+    meta: z.record(z.any()).optional(),
   }),
 });
 

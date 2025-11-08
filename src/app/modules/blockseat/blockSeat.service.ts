@@ -5,7 +5,10 @@ import httpStatus from "http-status";
 // ==================== INTERFACES ====================
 export interface AvailableDate {
   departureDate: string; // YYYY-MM-DD format
+  departureTime: string; // HH:MM format (24-hour)
   returnDate?: string; // Optional, only for ROUND_TRIP
+  returnTime?: string; // Optional, only for ROUND_TRIP - HH:MM format
+  deadline: string; // YYYY-MM-DD format - booking deadline for this date
 }
 
 export interface UpdateBlockSeatRequest {
@@ -25,14 +28,28 @@ export interface UpdateBlockSeatRequest {
       iataCode: string;
     };
     tripType: "ONE_WAY" | "ROUND_TRIP";
+    departureFlightNumber: string;
+    returnFlightNumber?: string;
   };
   availableDates?: AvailableDate[];
   removeDates?: AvailableDate[]; // Dates to remove from availableDates
   classes?: Array<{
     classId: number;
-    className?: string;
     totalSeats: number;
-    price: number;
+    pricing: {
+      adult: {
+        price: number;
+        commission: { type: "FIXED_AMOUNT" | "PERCENTAGE"; value: number };
+      };
+      children: {
+        price: number;
+        commission: { type: "FIXED_AMOUNT" | "PERCENTAGE"; value: number };
+      };
+      infant: {
+        price: number;
+        commission: { type: "FIXED_AMOUNT" | "PERCENTAGE"; value: number };
+      };
+    };
   }>;
   currency?: string;
   status?: "Available" | "Unavailable";
@@ -85,13 +102,27 @@ export interface CreateBlockSeatRequest {
       iataCode: string;
     };
     tripType: "ONE_WAY" | "ROUND_TRIP";
+    departureFlightNumber: string;
+    returnFlightNumber?: string;
   };
   availableDates: AvailableDate[];
   classes: Array<{
     classId: number;
-    className?: string;
     totalSeats: number;
-    price: number;
+    pricing: {
+      adult: {
+        price: number;
+        commission: { type: "FIXED_AMOUNT" | "PERCENTAGE"; value: number };
+      };
+      children: {
+        price: number;
+        commission: { type: "FIXED_AMOUNT" | "PERCENTAGE"; value: number };
+      };
+      infant: {
+        price: number;
+        commission: { type: "FIXED_AMOUNT" | "PERCENTAGE"; value: number };
+      };
+    };
   }>;
   currency: string;
   status?: "Available" | "Unavailable";
@@ -183,11 +214,10 @@ export const createBlockSeat = async (
       // Classes with initial booking count as 0
       classes: request.classes.map((classItem) => ({
         classId: classItem.classId,
-        className: classItem.className || `Class ${classItem.classId}`,
         totalSeats: classItem.totalSeats,
         bookedSeats: 0,
         availableSeats: classItem.totalSeats,
-        price: classItem.price,
+        pricing: classItem.pricing,
         currency: request.currency,
       })),
 
@@ -747,25 +777,20 @@ export const updateBlockSeat = async (
           const existingClass = blockSeat.classes[existingClassIndex];
           blockSeat.classes[existingClassIndex] = {
             classId: classItem.classId,
-            className:
-              classItem.className ||
-              existingClass.className ||
-              `Class ${classItem.classId}`,
             totalSeats: classItem.totalSeats,
             bookedSeats: existingClass.bookedSeats, // Preserve booked seats
             availableSeats: classItem.totalSeats - existingClass.bookedSeats,
-            price: classItem.price,
+            pricing: classItem.pricing,
             currency: request.currency || blockSeat.currency,
           };
         } else {
           // Add new class
           blockSeat.classes.push({
             classId: classItem.classId,
-            className: classItem.className || `Class ${classItem.classId}`,
             totalSeats: classItem.totalSeats,
             bookedSeats: 0,
             availableSeats: classItem.totalSeats,
-            price: classItem.price,
+            pricing: classItem.pricing,
             currency: request.currency || blockSeat.currency,
           });
         }

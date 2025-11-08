@@ -44,6 +44,9 @@ const createBooking = catchAsync(async (req: Request, res: Response) => {
     wholesalerId: (req as any).user?.wholesaler || req.body.wholesalerId,
     agencyId: (req as any).user?.agency || req.body.agencyId,
     subagentId: (req as any).user?.id || req.body.subagentId,
+
+    // Metadata
+    meta: req.body.meta,
   };
 
   const result = await createFlightBooking(bookingRequest);
