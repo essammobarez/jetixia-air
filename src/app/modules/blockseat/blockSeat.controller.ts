@@ -37,7 +37,7 @@ const createBlockSeatController = catchAsync(
     // Validate required fields
     const {
       name,
-      airline,
+      airlines,
       route,
       availableDates,
       classes,
@@ -60,13 +60,25 @@ const createBlockSeatController = catchAsync(
       });
     }
 
-    if (!airline || !airline.code || !airline.name) {
+    if (!airlines || !Array.isArray(airlines) || airlines.length === 0) {
       return sendResponse(res, {
         statusCode: httpStatus.BAD_REQUEST,
         success: false,
-        message: "Airline information is required (code and name)",
+        message: "At least one airline is required",
         data: null,
       });
+    }
+
+    // Validate each airline
+    for (const airlineItem of airlines) {
+      if (!airlineItem.code || !airlineItem.name) {
+        return sendResponse(res, {
+          statusCode: httpStatus.BAD_REQUEST,
+          success: false,
+          message: "Each airline must have code and name",
+          data: null,
+        });
+      }
     }
 
     if (!route || !route.from || !route.to || !route.tripType) {
@@ -78,22 +90,66 @@ const createBlockSeatController = catchAsync(
       });
     }
 
-    if (!route.departureFlightNumber) {
+    if (!route.flightType) {
       return sendResponse(res, {
         statusCode: httpStatus.BAD_REQUEST,
         success: false,
-        message: "Departure flight number is required",
+        message: "Flight type is required (DIRECT or STOPPAGE)",
         data: null,
       });
     }
 
-    if (route.tripType === "ROUND_TRIP" && !route.returnFlightNumber) {
+    if (route.stops === undefined || route.stops < 0 || route.stops > 3) {
       return sendResponse(res, {
         statusCode: httpStatus.BAD_REQUEST,
         success: false,
-        message: "Return flight number is required for ROUND_TRIP",
+        message: "Stops must be between 0 and 3",
         data: null,
       });
+    }
+
+    if (!route.outboundSegments || route.outboundSegments.length === 0) {
+      return sendResponse(res, {
+        statusCode: httpStatus.BAD_REQUEST,
+        success: false,
+        message: "At least one outbound segment is required",
+        data: null,
+      });
+    }
+
+    // Validate outbound segments count matches stops + 1
+    if (route.outboundSegments.length !== route.stops + 1) {
+      return sendResponse(res, {
+        statusCode: httpStatus.BAD_REQUEST,
+        success: false,
+        message: `Outbound segments must be ${route.stops + 1} for ${
+          route.stops
+        } stop(s)`,
+        data: null,
+      });
+    }
+
+    // Validate return segments for ROUND_TRIP
+    if (route.tripType === "ROUND_TRIP") {
+      if (!route.returnSegments || route.returnSegments.length === 0) {
+        return sendResponse(res, {
+          statusCode: httpStatus.BAD_REQUEST,
+          success: false,
+          message: "Return segments are required for ROUND_TRIP",
+          data: null,
+        });
+      }
+
+      if (route.returnSegments.length !== route.stops + 1) {
+        return sendResponse(res, {
+          statusCode: httpStatus.BAD_REQUEST,
+          success: false,
+          message: `Return segments must be ${route.stops + 1} for ${
+            route.stops
+          } stop(s)`,
+          data: null,
+        });
+      }
     }
 
     if (
@@ -109,22 +165,13 @@ const createBlockSeatController = catchAsync(
       });
     }
 
-    // Validate date structure - back to object array format
+    // Validate date structure
     for (const dateObj of availableDates) {
       if (!dateObj.departureDate) {
         return sendResponse(res, {
           statusCode: httpStatus.BAD_REQUEST,
           success: false,
           message: "Each date must have a departureDate",
-          data: null,
-        });
-      }
-
-      if (!dateObj.departureTime) {
-        return sendResponse(res, {
-          statusCode: httpStatus.BAD_REQUEST,
-          success: false,
-          message: "Each date must have a departureTime",
           data: null,
         });
       }
@@ -138,7 +185,32 @@ const createBlockSeatController = catchAsync(
         });
       }
 
-      // Validate return date and time for ROUND_TRIP
+      if (
+        !dateObj.outboundSegmentTimes ||
+        !Array.isArray(dateObj.outboundSegmentTimes) ||
+        dateObj.outboundSegmentTimes.length === 0
+      ) {
+        return sendResponse(res, {
+          statusCode: httpStatus.BAD_REQUEST,
+          success: false,
+          message: "Each date must have outbound segment times",
+          data: null,
+        });
+      }
+
+      // Validate outbound segment times count matches route segments
+      if (
+        dateObj.outboundSegmentTimes.length !== route.outboundSegments.length
+      ) {
+        return sendResponse(res, {
+          statusCode: httpStatus.BAD_REQUEST,
+          success: false,
+          message: `Outbound segment times count must match outbound segments count (${route.outboundSegments.length})`,
+          data: null,
+        });
+      }
+
+      // Validate return date and return segment times for ROUND_TRIP
       if (route.tripType === "ROUND_TRIP") {
         if (!dateObj.returnDate) {
           return sendResponse(res, {
@@ -148,11 +220,29 @@ const createBlockSeatController = catchAsync(
             data: null,
           });
         }
-        if (!dateObj.returnTime) {
+
+        if (
+          !dateObj.returnSegmentTimes ||
+          !Array.isArray(dateObj.returnSegmentTimes) ||
+          dateObj.returnSegmentTimes.length === 0
+        ) {
           return sendResponse(res, {
             statusCode: httpStatus.BAD_REQUEST,
             success: false,
-            message: "Return time is required for ROUND_TRIP bookings",
+            message:
+              "Return segment times are required for ROUND_TRIP bookings",
+            data: null,
+          });
+        }
+
+        if (
+          route.returnSegments &&
+          dateObj.returnSegmentTimes.length !== route.returnSegments.length
+        ) {
+          return sendResponse(res, {
+            statusCode: httpStatus.BAD_REQUEST,
+            success: false,
+            message: `Return segment times count must match return segments count (${route.returnSegments.length})`,
             data: null,
           });
         }
@@ -211,7 +301,7 @@ const createBlockSeatController = catchAsync(
     // Prepare request object
     const blockSeatRequest: CreateBlockSeatRequest = {
       name,
-      airline,
+      airlines,
       route,
       availableDates,
       classes,
@@ -530,7 +620,7 @@ const updateBlockSeatController = catchAsync(
     // Validate only fields that are being updated
     const {
       name,
-      airline,
+      airlines,
       route,
       availableDates,
       removeDates,
@@ -545,14 +635,27 @@ const updateBlockSeatController = catchAsync(
       releaseDate,
     } = req.body;
 
-    // If airline is being updated, validate it
-    if (airline !== undefined && (!airline.code || !airline.name)) {
-      return sendResponse(res, {
-        statusCode: httpStatus.BAD_REQUEST,
-        success: false,
-        message: "Airline code and name are required when updating airline",
-        data: null,
-      });
+    // If airlines is being updated, validate it
+    if (airlines !== undefined) {
+      if (!Array.isArray(airlines) || airlines.length === 0) {
+        return sendResponse(res, {
+          statusCode: httpStatus.BAD_REQUEST,
+          success: false,
+          message: "At least one airline is required",
+          data: null,
+        });
+      }
+
+      for (const airlineItem of airlines) {
+        if (!airlineItem.code || !airlineItem.name) {
+          return sendResponse(res, {
+            statusCode: httpStatus.BAD_REQUEST,
+            success: false,
+            message: "Each airline must have code and name",
+            data: null,
+          });
+        }
+      }
     }
 
     // If route is being updated, validate it
@@ -566,22 +669,64 @@ const updateBlockSeatController = catchAsync(
         });
       }
 
-      if (!route.departureFlightNumber) {
+      if (!route.flightType) {
         return sendResponse(res, {
           statusCode: httpStatus.BAD_REQUEST,
           success: false,
-          message: "Departure flight number is required",
+          message: "Flight type is required (DIRECT or STOPPAGE)",
           data: null,
         });
       }
 
-      if (route.tripType === "ROUND_TRIP" && !route.returnFlightNumber) {
+      if (route.stops === undefined || route.stops < 0 || route.stops > 3) {
         return sendResponse(res, {
           statusCode: httpStatus.BAD_REQUEST,
           success: false,
-          message: "Return flight number is required for ROUND_TRIP",
+          message: "Stops must be between 0 and 3",
           data: null,
         });
+      }
+
+      if (!route.outboundSegments || route.outboundSegments.length === 0) {
+        return sendResponse(res, {
+          statusCode: httpStatus.BAD_REQUEST,
+          success: false,
+          message: "At least one outbound segment is required",
+          data: null,
+        });
+      }
+
+      if (route.outboundSegments.length !== route.stops + 1) {
+        return sendResponse(res, {
+          statusCode: httpStatus.BAD_REQUEST,
+          success: false,
+          message: `Outbound segments must be ${route.stops + 1} for ${
+            route.stops
+          } stop(s)`,
+          data: null,
+        });
+      }
+
+      if (route.tripType === "ROUND_TRIP") {
+        if (!route.returnSegments || route.returnSegments.length === 0) {
+          return sendResponse(res, {
+            statusCode: httpStatus.BAD_REQUEST,
+            success: false,
+            message: "Return segments are required for ROUND_TRIP",
+            data: null,
+          });
+        }
+
+        if (route.returnSegments.length !== route.stops + 1) {
+          return sendResponse(res, {
+            statusCode: httpStatus.BAD_REQUEST,
+            success: false,
+            message: `Return segments must be ${route.stops + 1} for ${
+              route.stops
+            } stop(s)`,
+            data: null,
+          });
+        }
       }
     }
 
@@ -608,15 +753,6 @@ const updateBlockSeatController = catchAsync(
           });
         }
 
-        if (!dateObj.departureTime) {
-          return sendResponse(res, {
-            statusCode: httpStatus.BAD_REQUEST,
-            success: false,
-            message: "Each date must have a departureTime",
-            data: null,
-          });
-        }
-
         if (!dateObj.deadline) {
           return sendResponse(res, {
             statusCode: httpStatus.BAD_REQUEST,
@@ -626,7 +762,20 @@ const updateBlockSeatController = catchAsync(
           });
         }
 
-        // Validate return date and time for ROUND_TRIP
+        if (
+          !dateObj.outboundSegmentTimes ||
+          !Array.isArray(dateObj.outboundSegmentTimes) ||
+          dateObj.outboundSegmentTimes.length === 0
+        ) {
+          return sendResponse(res, {
+            statusCode: httpStatus.BAD_REQUEST,
+            success: false,
+            message: "Each date must have outbound segment times",
+            data: null,
+          });
+        }
+
+        // Validate return date and return segment times for ROUND_TRIP
         if (tripType === "ROUND_TRIP") {
           if (!dateObj.returnDate) {
             return sendResponse(res, {
@@ -636,11 +785,17 @@ const updateBlockSeatController = catchAsync(
               data: null,
             });
           }
-          if (!dateObj.returnTime) {
+
+          if (
+            !dateObj.returnSegmentTimes ||
+            !Array.isArray(dateObj.returnSegmentTimes) ||
+            dateObj.returnSegmentTimes.length === 0
+          ) {
             return sendResponse(res, {
               statusCode: httpStatus.BAD_REQUEST,
               success: false,
-              message: "Return time is required for ROUND_TRIP bookings",
+              message:
+                "Return segment times are required for ROUND_TRIP bookings",
               data: null,
             });
           }
@@ -739,7 +894,7 @@ const updateBlockSeatController = catchAsync(
     // Prepare request object with only provided fields
     const blockSeatRequest: UpdateBlockSeatRequest = {
       name,
-      airline,
+      airlines,
       route,
       availableDates,
       removeDates,

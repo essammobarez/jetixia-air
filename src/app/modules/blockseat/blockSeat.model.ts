@@ -1,5 +1,50 @@
 import { model, Schema, Document, Model } from "mongoose";
 
+// ==================== LAYOVER SCHEMA (for route segments) ====================
+const LayoverInfoSchema = new Schema(
+  {
+    airport: { type: String, required: true }, // IATA code
+    airportName: { type: String },
+  },
+  { _id: false }
+);
+
+// ==================== SEGMENT SCHEMA (NO TIMES) ====================
+const SegmentSchema = new Schema(
+  {
+    segmentNumber: { type: Number, required: true },
+    airline: {
+      code: { type: String, required: true },
+      name: { type: String, required: true },
+    },
+    flightNumber: { type: String, required: true },
+    from: {
+      country: { type: String, required: true },
+      iataCode: { type: String, required: true },
+    },
+    to: {
+      country: { type: String, required: true },
+      iataCode: { type: String, required: true },
+    },
+    hasLayover: { type: Boolean, default: false },
+    layover: LayoverInfoSchema, // Just airport info, times are in availableDates
+  },
+  { _id: false }
+);
+
+// ==================== SEGMENT TIMES SCHEMA (for available dates) ====================
+const SegmentTimesSchema = new Schema(
+  {
+    segmentNumber: { type: Number, required: true },
+    departureTime: { type: String, required: true }, // HH:MM
+    arrivalTime: { type: String, required: true }, // HH:MM
+    flightDuration: { type: String, required: true }, // HH:MM
+    layoverDuration: { type: String }, // HH:MM (if segment has layover)
+    layoverMinutes: { type: Number }, // Total minutes (if segment has layover)
+  },
+  { _id: false }
+);
+
 // ==================== ROUTE SCHEMA ====================
 const RouteSchema = new Schema(
   {
@@ -16,8 +61,14 @@ const RouteSchema = new Schema(
       enum: ["ONE_WAY", "ROUND_TRIP"],
       required: true,
     },
-    departureFlightNumber: { type: String, required: true }, // Flight number for outbound flight
-    returnFlightNumber: { type: String }, // Flight number for return flight (ROUND_TRIP only)
+    flightType: {
+      type: String,
+      enum: ["DIRECT", "STOPPAGE"],
+      default: "DIRECT",
+    },
+    stops: { type: Number, default: 0, min: 0, max: 3 },
+    outboundSegments: [SegmentSchema],
+    returnSegments: [SegmentSchema], // Only for ROUND_TRIP
   },
   { _id: false }
 );
@@ -128,10 +179,10 @@ const CommissionSchema = new Schema(
 const AvailableDatesSchema = new Schema(
   {
     departureDate: { type: String, required: true }, // YYYY-MM-DD format
-    departureTime: { type: String, required: true }, // HH:MM format (24-hour)
     returnDate: { type: String }, // Optional, only for ROUND_TRIP
-    returnTime: { type: String }, // Optional, only for ROUND_TRIP - HH:MM format
     deadline: { type: String, required: true }, // YYYY-MM-DD format - booking deadline for this date
+    outboundSegmentTimes: [SegmentTimesSchema], // Times for each outbound segment
+    returnSegmentTimes: [SegmentTimesSchema], // Times for each return segment (ROUND_TRIP only)
   },
   { _id: false }
 );
@@ -139,11 +190,11 @@ const AvailableDatesSchema = new Schema(
 // ==================== INTERFACES ====================
 export interface IBlockSeat extends Document {
   name: string;
-  airline: {
+  airlines: Array<{
     code: string;
     name: string;
     country?: string;
-  };
+  }>;
   route: {
     from: {
       country: string;
@@ -154,15 +205,53 @@ export interface IBlockSeat extends Document {
       iataCode: string;
     };
     tripType: "ONE_WAY" | "ROUND_TRIP";
-    departureFlightNumber: string; // Flight number for outbound flight
-    returnFlightNumber?: string; // Flight number for return flight (ROUND_TRIP only)
+    flightType: "DIRECT" | "STOPPAGE";
+    stops: number;
+    outboundSegments: Array<{
+      segmentNumber: number;
+      airline: { code: string; name: string };
+      flightNumber: string;
+      from: { country: string; iataCode: string };
+      to: { country: string; iataCode: string };
+      hasLayover: boolean;
+      layover?: {
+        airport: string;
+        airportName?: string;
+      };
+    }>;
+    returnSegments?: Array<{
+      segmentNumber: number;
+      airline: { code: string; name: string };
+      flightNumber: string;
+      from: { country: string; iataCode: string };
+      to: { country: string; iataCode: string };
+      hasLayover: boolean;
+      layover?: {
+        airport: string;
+        airportName?: string;
+      };
+    }>;
   };
   availableDates: Array<{
     departureDate: string;
-    departureTime: string;
     returnDate?: string;
-    returnTime?: string;
-    deadline: string; // Booking deadline for this date
+    deadline: string;
+    outboundSegmentTimes: Array<{
+      segmentNumber: number;
+      departureTime: string;
+      arrivalTime: string;
+      flightDuration: string;
+      layoverDuration?: string;
+      layoverMinutes?: number;
+    }>;
+    returnSegmentTimes?: Array<{
+      segmentNumber: number;
+      departureTime: string;
+      arrivalTime: string;
+      flightDuration: string;
+      layoverDuration?: string;
+      layoverMinutes?: number;
+    }>;
   }>;
   classes: Array<{
     classId: number;
@@ -256,11 +345,13 @@ const BlockSeatSchema = new Schema(
     },
 
     // ==================== AIRLINE INFORMATION ====================
-    airline: {
-      code: { type: String, required: true },
-      name: { type: String, required: true },
-      country: { type: String },
-    },
+    airlines: [
+      {
+        code: { type: String, required: true },
+        name: { type: String, required: true },
+        country: { type: String },
+      },
+    ],
 
     // ==================== ROUTE INFORMATION ====================
     route: RouteSchema,

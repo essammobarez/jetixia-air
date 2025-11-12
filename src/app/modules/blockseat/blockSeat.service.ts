@@ -3,21 +3,45 @@ import AppError from "../../errors/AppError";
 import httpStatus from "http-status";
 
 // ==================== INTERFACES ====================
+export interface LayoverInfo {
+  airport: string;
+  airportName?: string;
+}
+
+export interface Segment {
+  segmentNumber: number;
+  airline: { code: string; name: string };
+  flightNumber: string;
+  from: { country: string; iataCode: string };
+  to: { country: string; iataCode: string };
+  hasLayover: boolean;
+  layover?: LayoverInfo;
+}
+
+export interface SegmentTimes {
+  segmentNumber: number;
+  departureTime: string; // HH:MM
+  arrivalTime: string; // HH:MM
+  flightDuration: string; // HH:MM
+  layoverDuration?: string; // HH:MM (if segment has layover)
+  layoverMinutes?: number; // Total minutes
+}
+
 export interface AvailableDate {
   departureDate: string; // YYYY-MM-DD format
-  departureTime: string; // HH:MM format (24-hour)
   returnDate?: string; // Optional, only for ROUND_TRIP
-  returnTime?: string; // Optional, only for ROUND_TRIP - HH:MM format
   deadline: string; // YYYY-MM-DD format - booking deadline for this date
+  outboundSegmentTimes: SegmentTimes[];
+  returnSegmentTimes?: SegmentTimes[]; // Only for ROUND_TRIP
 }
 
 export interface UpdateBlockSeatRequest {
   name?: string;
-  airline?: {
+  airlines?: Array<{
     code: string;
     name: string;
     country?: string;
-  };
+  }>;
   route?: {
     from: {
       country: string;
@@ -28,8 +52,10 @@ export interface UpdateBlockSeatRequest {
       iataCode: string;
     };
     tripType: "ONE_WAY" | "ROUND_TRIP";
-    departureFlightNumber: string;
-    returnFlightNumber?: string;
+    flightType: "DIRECT" | "STOPPAGE";
+    stops: number;
+    outboundSegments: Segment[];
+    returnSegments?: Segment[];
   };
   availableDates?: AvailableDate[];
   removeDates?: AvailableDate[]; // Dates to remove from availableDates
@@ -87,11 +113,11 @@ export interface UpdateBlockSeatRequest {
 
 export interface CreateBlockSeatRequest {
   name: string;
-  airline: {
+  airlines: Array<{
     code: string;
     name: string;
     country?: string;
-  };
+  }>;
   route: {
     from: {
       country: string;
@@ -102,8 +128,10 @@ export interface CreateBlockSeatRequest {
       iataCode: string;
     };
     tripType: "ONE_WAY" | "ROUND_TRIP";
-    departureFlightNumber: string;
-    returnFlightNumber?: string;
+    flightType: "DIRECT" | "STOPPAGE";
+    stops: number;
+    outboundSegments: Segment[];
+    returnSegments?: Segment[];
   };
   availableDates: AvailableDate[];
   classes: Array<{
@@ -202,13 +230,13 @@ export const createBlockSeat = async (
       // Basic info
       name: request.name,
 
-      // Airline information
-      airline: request.airline,
+      // Airline information (multiple airlines for multi-stop flights)
+      airlines: request.airlines,
 
-      // Route information
+      // Route information with segments
       route: request.route,
 
-      // Available dates - keep original format
+      // Available dates (just dates, times are in segments)
       availableDates: request.availableDates,
 
       // Classes with initial booking count as 0
@@ -694,8 +722,8 @@ export const updateBlockSeat = async (
       blockSeat.name = request.name;
     }
 
-    if (request.airline) {
-      blockSeat.airline = request.airline;
+    if (request.airlines) {
+      blockSeat.airlines = request.airlines;
     }
 
     if (request.route) {
