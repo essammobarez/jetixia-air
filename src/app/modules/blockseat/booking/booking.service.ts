@@ -252,7 +252,15 @@ export const createBooking = async (
 
 export const getBookingById = async (id: string) => {
   const booking = await BlockSeatBooking.findById(id)
-    .populate({ path: "blockSeat", select: "name airline route currency" })
+    .populate({
+      path: "blockSeat",
+      select: "name airlines route currency classes",
+    })
+    .populate({
+      path: "wholesaler",
+      select: "wholesalerName email phoneNumber address logo",
+    })
+    .populate({ path: "agency", select: "name email phone" })
     .lean();
   if (!booking) {
     throw new AppError(httpStatus.NOT_FOUND, "Booking not found");
@@ -278,7 +286,7 @@ export const getBookingsByWholesaler = async (
       BlockSeatBooking.find(query)
         .populate({
           path: "blockSeat",
-          select: "name airline route currency classes",
+          select: "name airlines route currency classes",
         })
         .populate({ path: "agency", select: "name email phone" })
         .sort({ createdAt: -1 })
@@ -323,11 +331,11 @@ export const getBookingsByAgency = async (
       BlockSeatBooking.find(query)
         .populate({
           path: "blockSeat",
-          select: "name airline route currency classes",
+          select: "name airlines route currency classes",
         })
         .populate({
           path: "wholesaler",
-          select: "wholesalerName email phoneNumber",
+          select: "wholesalerName email phoneNumber address logo",
         })
         .sort({ createdAt: -1 })
         .skip(skip)
